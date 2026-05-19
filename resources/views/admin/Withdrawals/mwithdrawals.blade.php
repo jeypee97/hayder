@@ -66,6 +66,15 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                             <a href="{{route('processwithdraw',$withdrawal->id)}}" class="m-1 btn btn-info btn-sm">
                                                 <i class="fa fa-eye"></i> View
                                             </a>
+                                            @if (Auth('admin')->User()->type === 'Super Admin')
+                                                <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this withdrawal request?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="m-1 btn btn-danger btn-sm">
+                                                        <i class="fa fa-trash"></i> Delete
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </td>
                                     </tr>
                                     @endforeach

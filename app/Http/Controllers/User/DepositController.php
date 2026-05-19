@@ -257,19 +257,19 @@ class DepositController extends Controller
 
         //send email notification
 
-        // $objDemo = new \stdClass();
-        // $objDemo->message = "This is to inform you of a successful Deposit of $settings->currency $request->amount, that just occured on your system. please login to process this deposit";
-        // $objDemo->sender = $settings->site_name;
-        // $objDemo->date = \Carbon\Carbon::Now();
-        // $objDemo->subject ="Successful Deposit";
-        // Mail::bcc($settings->contact_email)->send(new NewNotification($objDemo));
+        $objDemo = new \stdClass();
+        $objDemo->message = "This is to inform you of a successful Deposit of $settings->currency $request->amount, that just occured on your system. please login to process this deposit";
+        $objDemo->sender = $settings->site_name;
+        $objDemo->date = \Carbon\Carbon::Now();
+        $objDemo->subject ="Successful Deposit";
+        Mail::bcc($settings->contact_email)->send(new NewNotification($objDemo));
 
-        // $objDemou = new \stdClass();
-        // $objDemou->message = "This is to inform you of a successful deposit of $settings->currency $request->amount, that just occured on your account. please wait while we process this transaction, you will receive a notification of your transaction status.";
-        // $objDemou->sender = $settings->site_name;
-        // $objDemou->date = \Carbon\Carbon::Now();
-        // $objDemou->subject ="Successful Deposit";
-        // Mail::bcc($user->email)->send(new NewNotification($objDemou));
+        $objDemou = new \stdClass();
+        $objDemou->message = "This is to inform you of a successful deposit of $settings->currency $request->amount, that just occured on your account. please wait while we process this transaction, you will receive a notification of your transaction status.";
+        $objDemou->sender = $settings->site_name;
+        $objDemou->date = \Carbon\Carbon::Now();
+        $objDemou->subject ="Successful Deposit";
+        Mail::bcc($user->email)->send(new NewNotification($objDemou));
 
 
         // dd("lotad");

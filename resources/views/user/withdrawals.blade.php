@@ -55,8 +55,9 @@ if (Auth::user()->dashboard_style == "light") {
                             <form action="{{ route('withdrawamount') }}" method="POST" id="withdrawalForm">
                                 @csrf
 
-                                <!-- Hidden field for the NET amount (what user actually receives - this gets submitted) -->
+                                <!-- Hidden fields for the payout amount and full balance deduction -->
                                 <input type="hidden" name="amount" id="netAmount" value="0">
+                                <input type="hidden" name="gross_amount" id="grossAmountSubmitted" value="0">
 
                                 <!-- Amount Input -->
                                 <div class="form-section">
@@ -440,6 +441,8 @@ if (Auth::user()->dashboard_style == "light") {
             font-weight: 700;
             color: var(--text-primary);
             transition: all 0.2s ease;
+                        margin-left: 20px;
+
         }
 
         .amount-input:focus {
@@ -812,6 +815,7 @@ if (Auth::user()->dashboard_style == "light") {
     <script>
         const grossAmountInput = document.getElementById('grossAmount');
         const netAmountInput = document.getElementById('netAmount');
+        const grossAmountSubmittedInput = document.getElementById('grossAmountSubmitted');
         const quickAmountBtns = document.querySelectorAll('.quick-amount-btn');
         const requestedAmount = document.getElementById('requestedAmount');
         const feeAmount = document.getElementById('feeAmount');
@@ -821,7 +825,7 @@ if (Auth::user()->dashboard_style == "light") {
         const userBalance = {{ Auth::user()->account_bal }};
         const currency = '{{ $settings->currency }}';
 
-        // Calculate fees and update hidden input with NET amount
+        // Calculate fees and update hidden inputs with payout and total debit amounts.
         function calculateFees() {
             const gross = parseFloat(grossAmountInput.value) || 0;
             const fee = (gross * feePercentage) / 100;
@@ -832,8 +836,9 @@ if (Auth::user()->dashboard_style == "light") {
             feeAmount.textContent = `-${currency}${fee.toFixed(2)}`;
             receiveAmount.textContent = `${currency}${net.toFixed(2)}`;
 
-            // Update hidden input with NET amount (this is what gets submitted)
+            // Keep the submitted values aligned with the UI.
             netAmountInput.value = net.toFixed(2);
+            grossAmountSubmittedInput.value = gross.toFixed(2);
         }
 
         // Quick amount buttons

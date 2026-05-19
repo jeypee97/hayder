@@ -315,6 +315,25 @@
         transform: translateY(0);
     }
 
+    /* Terms Notice */
+    .terms-notice {
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 12px;
+        line-height: 1.5;
+    }
+
+    .terms-notice a {
+        color: var(--primary-light);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .terms-notice a:hover {
+        color: var(--accent);
+    }
+
     /* Divider */
     .divider {
         display: flex;
@@ -640,19 +659,16 @@
                 </div>
             @endif
 
-            @if($terms->useterms == 'yes')
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="terms" required>
-                    <label class="form-check-label" for="terms">
-                        I agree to the <a href="{{ route('privacy') }}">Terms of Service</a> and <a href="{{ route('privacy') }}">Privacy Policy</a>
-                    </label>
-                </div>
-            @endif
-
             <button type="submit" class="btn-submit">
                 <i class="fa fa-user-plus"></i>
                 Create Account
             </button>
+
+            <p class="terms-notice">
+                By signing up, you agree to our
+                <a href="{{ route('terms') }}">Terms &amp; Conditions</a>
+                and <a href="{{ route('terms') }}">Privacy Policy</a>.
+            </p>
         </form>
 
         <!-- Social Login (if enabled) -->

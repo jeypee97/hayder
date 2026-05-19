@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.1.0', '>=')) {
     error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
     // error_reporting(E_ALL ^ E_WARNING); // Maybe this is enough
 }
-   
+
 //cron url
 Route::get('/cron',[AutoTaskController::class, 'autotopup'])->name('cron');
 //Front Pages Route
@@ -38,9 +38,9 @@ Route::get('statistic', function(){
     return view('home.statistics');
 });
 
-Route::get('terms', function(){
-    return view('home.terms');
-});
+// Route::get('terms', function(){
+//     return view('home.terms');
+// });
 
 Route::get('index', function(){
     return view('home.index');

@@ -188,6 +188,7 @@ if (Auth::user()->dashboard_style == "light") {
                                             <th>Method</th>
                                             <th>Status</th>
                                             <th>Date</th>
+                                            <th>Action</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -239,6 +240,20 @@ if (Auth::user()->dashboard_style == "light") {
                                                     <span class="time-text">
                                                             {{ \Carbon\Carbon::parse($withdrawal->created_at)->format('h:i A') }}
                                                         </span>
+                                                </td>
+                                                <td>
+                                                    @if(strtolower((string) $withdrawal->status) === 'pending')
+                                                        <form action="{{ route('cancelwithdrawal', $withdrawal->id) }}" method="POST" onsubmit="return confirm('Cancel this withdrawal request?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="status-badge failed" style="border: 0; cursor: pointer;">
+                                                                <i class="fa fa-times"></i>
+                                                                Cancel
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <span class="status-badge success">N/A</span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

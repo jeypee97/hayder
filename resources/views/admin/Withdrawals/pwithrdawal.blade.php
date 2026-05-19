@@ -13,6 +13,15 @@
                             <a class="btn btn-primary btn-sm" href="{{route('mwithdrawals')}}">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
+                            @if (Auth('admin')->User()->type === 'Super Admin')
+                                <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('Delete this withdrawal request?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="fa fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -62,7 +71,7 @@
                                         <select name="action" id="action" class="bg-{{$bg}} text-{{$text}} mb-2 form-control">
                                             <option value="Paid">Mark as Paid</option>
                                             <option value="Reject">Reject</option>
-                                        </select> 
+                                        </select>
                                     </div>
 
                                     <div class="form-row d-none" id="emailcheck">
@@ -106,7 +115,7 @@
         {{-- Script to show/hide rejection email fields --}}
         <script>
             const action = document.getElementById('action');
-            
+
             $('#action').change(function(){
                 if (action.value === "Reject") {
                     $('#emailcheck').removeClass('d-none');
