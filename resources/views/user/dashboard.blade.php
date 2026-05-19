@@ -399,6 +399,7 @@ if (Auth::user()->dashboard_style == "light") {
         .welcome-actions {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
@@ -442,6 +443,7 @@ if (Auth::user()->dashboard_style == "light") {
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             margin-bottom: 24px;
+            align-items: stretch;
         }
 
         @media (max-width: 1200px) {
@@ -451,6 +453,12 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 400px) {
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -465,6 +473,7 @@ if (Auth::user()->dashboard_style == "light") {
             align-items: center;
             gap: 16px;
             transition: all 0.2s ease;
+            min-height: 90px;
         }
 
         .stat-card:hover {
@@ -475,11 +484,13 @@ if (Auth::user()->dashboard_style == "light") {
         .stat-icon {
             width: 48px;
             height: 48px;
+            min-width: 48px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
+            flex-shrink: 0;
         }
 
         .stat-card.balance .stat-icon {
@@ -505,18 +516,25 @@ if (Auth::user()->dashboard_style == "light") {
         .stat-content {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .stat-label {
             font-size: 0.8rem;
             color: var(--text-muted);
             margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .stat-value {
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .stat-value.positive {
@@ -528,6 +546,7 @@ if (Auth::user()->dashboard_style == "light") {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
+            align-items: start;
         }
 
         @media (max-width: 1024px) {
@@ -542,6 +561,19 @@ if (Auth::user()->dashboard_style == "light") {
             border: 1px solid var(--border-color);
             border-radius: 16px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-card .card-header {
+            flex-shrink: 0;
+        }
+
+        .dashboard-card .quick-actions-grid,
+        .dashboard-card .activity-list,
+        .dashboard-card .trades-list,
+        .dashboard-card .status-list {
+            flex: 1;
         }
 
         .card-header {
