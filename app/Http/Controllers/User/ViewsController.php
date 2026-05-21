@@ -301,7 +301,7 @@ class ViewsController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $referralLink = url('/register?ref=' . $user->username);
+        $referralLink = url('/ref/' . $user->username);
 
         return view('user.referuser', [
             'title'        => 'Refer & Earn',
