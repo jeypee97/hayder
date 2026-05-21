@@ -23,31 +23,31 @@ class User extends Authenticatable implements MustVerifyEmail
     use TwoFactorAuthenticatable;
 
 
-//    protected static function boot()
-//    {
-//        parent::boot();
-//
-//        static::updated(function ($user) {
-//            if ($user->isDirty('account_bal')) {
-//                $oldBalance = $user->getOriginal('account_bal');
-//                $newBalance = $user->account_bal;
-//
-//                Log::info('User account balance changed', [
-//                    'user_id' => $user->id,
-//                    'old_balance' => $oldBalance,
-//                    'new_balance' => $newBalance,
-//                    // 'changed_at' => now(),
-//                ]);
-//
-//                BalanceLog::create([
-//                    'user_id' => $user->id,
-//                    'old_balance' => $oldBalance,
-//                    'new_balance' => $newBalance,
-//                    // 'changed_at' => now(),
-//                ]);
-//            }
-//        });
-//    }
+    //    protected static function boot()
+    //    {
+    //        parent::boot();
+    //
+    //        static::updated(function ($user) {
+    //            if ($user->isDirty('account_bal')) {
+    //                $oldBalance = $user->getOriginal('account_bal');
+    //                $newBalance = $user->account_bal;
+    //
+    //                Log::info('User account balance changed', [
+    //                    'user_id' => $user->id,
+    //                    'old_balance' => $oldBalance,
+    //                    'new_balance' => $newBalance,
+    //                    // 'changed_at' => now(),
+    //                ]);
+    //
+    //                BalanceLog::create([
+    //                    'user_id' => $user->id,
+    //                    'old_balance' => $oldBalance,
+    //                    'new_balance' => $newBalance,
+    //                    // 'changed_at' => now(),
+    //                ]);
+    //            }
+    //        });
+    //    }
 
     /**
      * Send the email verification notification.
@@ -135,7 +135,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function refs()
     {
-        return $this->hasMany(User::class, 'ref_by', 'username');
+        return $this->hasMany(User::class, 'ref_by', 'id');
     }
 
     /**
@@ -143,7 +143,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function referrer()
     {
-        return $this->belongsTo(User::class, 'ref_by', 'username');
+        return $this->belongsTo(User::class, 'ref_by', 'id');
     }
 
 }

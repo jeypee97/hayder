@@ -296,7 +296,7 @@ class ViewsController extends Controller
     public function referuser()
     {
         $user = Auth::user();
-        $refs = User::where('ref_by', $user->username)
+        $refs = User::where('ref_by', $user->id)
             ->select('name', 'email', 'created_at', 'ref_bonus', 'account_bal')
             ->orderBy('created_at', 'desc')
             ->get();
