@@ -179,22 +179,24 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                             </div>
 
                             <!-- Add this after the Nationality row -->
-                            <div class="p-3 border row text-{{$text}}">
-                                <div class="col-md-4 border-right">
-                                    <h5>Referred By</h5>
-                                </div>
-                                <div class="col-md-8">
-                                    <h5>
-                                        @if ($ref)
-                                            <p class="text-{{$text}}">
-                                                {{$ref}}
-                                            </p>
-                                        @else
-                                            None
-                                        @endif
-                                    </h5>
-                                </div>
-                            </div>
+                           <div class="p-3 border row text-{{$text}}">
+    <div class="col-md-4 border-right">
+        <h5>Referred By</h5>
+    </div>
+
+    <div class="col-md-8">
+        <h5>
+            @if ($referrer)
+                <a href="{{ route('viewuser', $referrer->id) }}"
+                   class="text-primary">
+                    {{ $referrer->name }}
+                </a>
+            @else
+                None
+            @endif
+        </h5>
+    </div>
+</div>
                             <div class="p-3 border row text-{{$text}}">
                                 <div class="col-md-4 border-right">
                                     <h5>Registered</h5>

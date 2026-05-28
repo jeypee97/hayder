@@ -264,6 +264,8 @@ class ManageUsersController extends Controller
 
         $ref = $referrer->name;
 
+          
+
 
         return view('admin.Users.userdetails', [
             'user' => $user,
@@ -274,7 +276,7 @@ class ManageUsersController extends Controller
             'withdrawals' => $withdrawals,
             'totalDeposits' => $totalDeposits,
             'totalWithdrawals' => $totalWithdrawals,
-            'ref' => $ref,
+            'referrer' => $referrer,
         ]);
     }
 //    public function viewuser($id){
