@@ -264,7 +264,7 @@ class ManageUsersController extends Controller
 
         $ref = $referrer->name;
 
-          
+
 
 
         return view('admin.Users.userdetails', [

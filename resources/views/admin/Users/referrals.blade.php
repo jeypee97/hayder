@@ -40,7 +40,7 @@ if (Auth('admin')->user()->dashboard_style == "light") {
                                             </div>
                                         </div>
                                     </div>
-                                    γχ
+
 
                                     <div class="mt-4">
                                         @if ($referred_users->isEmpty())
@@ -63,7 +63,9 @@ if (Auth('admin')->user()->dashboard_style == "light") {
                                                     @foreach ($referred_users as $index => $ref)
                                                         <tr>
                                                             <td>{{ $loop->iteration + ($referred_users->currentPage() - 1) * $referred_users->perPage() }}</td>
-                                                            <td>{{ $ref->name }}</td>
+                                                       <a href="{{ route('viewuser', $ref->id) }}" class="text-primary">
+        {{ $ref->name }}
+    </a>
                                                             <td>{{ $ref->email }}</td>
                                                             <td>{{ $ref->created_at->toDayDateTimeString() }}</td>
                                                             <td>
