@@ -24,40 +24,14 @@ if (Auth::user()->dashboard_style == "light") {
                         <h1 class="page-title">Refer &amp; Earn</h1>
                         <p class="page-subtitle">Invite friends and earn commissions on their activity</p>
                     </div>
-               
+
                 </div>
 
                 <x-danger-alert/>
                 <x-success-alert/>
 
                 <!-- Hero Banner -->
-                <div class="referral-hero">
-                    <div class="hero-content">
-                        <div class="hero-icon">
-                            <i class="fa fa-user-plus"></i>
-                        </div>
-                        <div class="hero-text">
-                            <h2>Share your link. Earn together.</h2>
-                            <p>For every friend you refer who deposits, you earn a commission — automatically credited to your account.</p>
-                        </div>
-                    </div>
-                    <div class="hero-stats">
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">{{ $refs->count() }}</span>
-                            <span class="hero-stat-label">Total Referrals</span>
-                        </div>
-                        <div class="hero-stat-divider"></div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">{{ $settings->currency }}{{ number_format(Auth::user()->ref_bonus ?? 0, 2) }}</span>
-                            <span class="hero-stat-label">Bonus Earned</span>
-                        </div>
-                        <div class="hero-stat-divider"></div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">{{ $settings->referral_commission1 ?? 0 }}%</span>
-                            <span class="hero-stat-label">Commission Rate</span>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <!-- Main Layout -->
                 <div class="referral-layout">
