@@ -63,9 +63,11 @@ if (Auth('admin')->user()->dashboard_style == "light") {
                                                     @foreach ($referred_users as $index => $ref)
                                                         <tr>
                                                             <td>{{ $loop->iteration + ($referred_users->currentPage() - 1) * $referred_users->perPage() }}</td>
-                                                       <a href="{{ route('viewuser', $ref->id) }}" class="text-primary">
+                                                      <td>
+    <a href="{{ route('viewuser', $ref->id) }}" class="text-primary">
         {{ $ref->name }}
     </a>
+</td>
                                                             <td>{{ $ref->email }}</td>
                                                             <td>{{ $ref->created_at->toDayDateTimeString() }}</td>
                                                             <td>
