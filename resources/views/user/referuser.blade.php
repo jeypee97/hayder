@@ -24,10 +24,7 @@ if (Auth::user()->dashboard_style == "light") {
                         <h1 class="page-title">Refer &amp; Earn</h1>
                         <p class="page-subtitle">Invite friends and earn commissions on their activity</p>
                     </div>
-                    <div class="ref-bonus-display">
-                        <span class="balance-label">Total Referral Bonus</span>
-                        <span class="balance-amount">{{ $settings->currency }}{{ number_format(Auth::user()->ref_bonus ?? 0, 2) }}</span>
-                    </div>
+               
                 </div>
 
                 <x-danger-alert/>
