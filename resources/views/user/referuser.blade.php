@@ -31,7 +31,7 @@ if (Auth::user()->dashboard_style == "light") {
                 <x-success-alert/>
 
                 <!-- Hero Banner -->
-                
+
 
                 <!-- Main Layout -->
                 <div class="referral-layout">
@@ -271,10 +271,10 @@ if (Auth::user()->dashboard_style == "light") {
                                         <div class="stats-row-icon active-users">
                                             <i class="fa fa-user-check"></i>
                                         </div>
-                                        <div class="stats-row-content">
+                                        {{-- <div class="stats-row-content">
                                             <span class="stats-row-label">Active Users</span>
                                             <span class="stats-row-value">{{ $refs->where('account_bal', '>', 0)->count() }}</span>
-                                        </div>
+                                        </div> --}}
                                     </div>
                                     <div class="stats-row">
                                         <div class="stats-row-icon earnings">
