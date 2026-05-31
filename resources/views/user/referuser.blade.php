@@ -267,15 +267,15 @@ if (Auth::user()->dashboard_style == "light") {
                                             <span class="stats-row-value">{{ $refs->count() }}</span>
                                         </div>
                                     </div>
-                                    <div class="stats-row">
-                                        <div class="stats-row-icon active-users">
+                                    {{-- <div class="stats-row">
+                                        {{-- <div class="stats-row-icon active-users">
                                             <i class="fa fa-user-check"></i>
-                                        </div>
+                                        </div> --}}
                                         {{-- <div class="stats-row-content">
                                             <span class="stats-row-label">Active Users</span>
                                             <span class="stats-row-value">{{ $refs->where('account_bal', '>', 0)->count() }}</span>
-                                        </div> --}}
-                                    </div>
+                                        </div> 
+                                    </div> --}}
                                     <div class="stats-row">
                                         <div class="stats-row-icon earnings">
                                             <i class="fa fa-coins"></i>
