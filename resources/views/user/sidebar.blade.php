@@ -155,6 +155,35 @@
                     </a>
                 </li>
 
+                <!-- Account (Mobile) -->
+                <li class="nav-section d-md-none">
+                    <span class="nav-section-text">Account</span>
+                </li>
+
+                <!-- Account Settings (Mobile) -->
+                <li class="nav-item d-md-none {{ request()->routeIs('profile') ? 'active' : '' }}">
+                    <a href="{{ route('profile') }}" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fa fa-cog"></i>
+                        </div>
+                        <span class="nav-text">Account Settings</span>
+                    </a>
+                </li>
+
+                <!-- Logout (Mobile) -->
+                <li class="nav-item d-md-none">
+                    <a href="{{ route('logout') }}" class="nav-link sidebar-logout"
+                       onclick="event.preventDefault(); document.getElementById('sidebar-logout-form').submit();">
+                        <div class="nav-icon">
+                            <i class="fa fa-sign-out-alt"></i>
+                        </div>
+                        <span class="nav-text">Logout</span>
+                    </a>
+                    <form id="sidebar-logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                        {{ csrf_field() }}
+                    </form>
+                </li>
+
             </ul>
         </div>
     </div>
@@ -324,6 +353,25 @@
         color: white;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Logout (Mobile) - Destructive */
+    .sidebar-redesign .nav-link.sidebar-logout {
+        color: #ef4444;
+    }
+
+    .sidebar-redesign .nav-link.sidebar-logout:hover {
+        background: #ef4444;
+        color: white;
+        box-shadow: 0 4px 12px -4px rgba(239, 68, 68, 0.5);
+    }
+
+    .sidebar-redesign .nav-link.sidebar-logout:hover .nav-icon {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .sidebar-redesign .nav-link.sidebar-logout:hover .nav-icon i {
+        color: white;
     }
 
     .sidebar-redesign .nav-link:hover .nav-icon {
