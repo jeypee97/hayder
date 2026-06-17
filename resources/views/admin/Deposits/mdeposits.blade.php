@@ -57,7 +57,9 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <a href="{{route('viewdepositimage', $deposit->id)}}" class="btn btn-{{$text}} btn-sm m-1" title="View payment screenshot">
                                                     <i class="fa fa-eye"></i>
                                                 </a>
-                                                <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
+                                                @if (Auth('admin')->User()->type === 'Super Admin')
+                                                    <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
+                                                @endif
                                                 @if($deposit->status != "Processed")
                                                     <a class="btn btn-primary btn-sm" href="{{url('admin/dashboard/pdeposit')}}/{{$deposit->id}}">Process</a>
                                                 @endif
@@ -80,7 +82,9 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <a href="{{route('viewdepositimage', $deposit->id)}}" class="btn btn-{{$text}} btn-sm m-1" title="View payment screenshot">
                                                     <i class="fa fa-eye"></i>
                                                 </a>
-                                                <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
+                                                @if (Auth('admin')->User()->type === 'Super Admin')
+                                                    <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
+                                                @endif
                                                 <a class="btn btn-primary btn-sm" href="{{url('admin/dashboard/pdeposit')}}/{{$deposit->id}}">Process</a>
                                             </td>
                                         </tr>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TradingPair;
 use App\Models\Trade;
 use App\Models\User;
+use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -286,7 +287,16 @@ public function index()
             // Calculate final amounts
             $grossProceeds = $totalValue; // Total value of sale
             $netProceeds = $grossProceeds - $fee; // After fee
-            
+
+            // Pay the trader's upline a commission on the profit. The commission
+            // is deducted from what the trader receives and from the realized P/L
+            // they see, so a $100 profit at 10% shows as $90 for the trader.
+            $commission = app(ReferralService::class)
+                ->handleTradeProfitCommission($user, $totalProfitLoss);
+
+            $netProceeds -= $commission;
+            $totalProfitLoss -= $commission;
+
             // Credit user's balance
             $user->account_bal += $netProceeds;
 
@@ -367,6 +377,17 @@ public function closeTrade($id)
         $netProceeds = $grossProceeds - $fee;
         $profitLoss = $netProceeds - $trade->amount; // amount is the original cost (entry_price * volume)
 
+        $user = Auth::user();
+
+        // Pay the trader's upline a commission on the profit. The commission is
+        // deducted from the trader's net proceeds and from the realized P/L they
+        // see, so a $100 profit at 10% shows as $90 for the trader.
+        $commission = app(ReferralService::class)
+            ->handleTradeProfitCommission($user, $profitLoss);
+
+        $netProceeds -= $commission;
+        $profitLoss -= $commission;
+
         // Update trade record
         $trade->status = 'closed';
         $trade->closed_at = now();
@@ -376,7 +397,6 @@ public function closeTrade($id)
         $trade->save();
 
         // Update user balance
-        $user = Auth::user();
         $user->account_bal += $netProceeds;
         $user->save();
 

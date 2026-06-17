@@ -50,6 +50,7 @@ class ReferralSettings extends Controller
             'referral_commission4'=>$request['ref_commission4'],
             'referral_commission5'=>$request['ref_commission5'],
             'signup_bonus'=>$request['signup_bonus'],
+            'trade_profit_commission'=>$request['trade_profit_commission'],
         ]);
         return response()->json(['status' => 200, 'success' => 'Bonus Settings Saved successfully']);
     }

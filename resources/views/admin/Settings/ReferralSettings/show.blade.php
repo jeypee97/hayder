@@ -56,6 +56,12 @@ if (Auth('admin')->User()->dashboard_style == "light") {
 								</div>
 							
 								<div class="form-group">
+									<h5 class="text-{{$text}}">Trade Profit Commission (%) </h5>
+									<input type="text" class="form-control bg-{{Auth('admin')->User()->dashboard_style}} text-{{$text}}" name="trade_profit_commission" value="{{$settings->trade_profit_commission}}" required>
+									<small class="text-{{$text}}">Percentage of a user's trade profit paid to their direct referrer. The trader receives the remainder.</small>
+								</div>
+
+								<div class="form-group">
 									<h5 class="text-{{$text}}">Registration Bonus({{$settings->currency}})</h5>
 									<input type="text" class="form-control bg-{{Auth('admin')->User()->dashboard_style}} text-{{$text}}" name="signup_bonus" value="{{$settings->signup_bonus}}" required>
 								</div>

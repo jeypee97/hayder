@@ -59,6 +59,15 @@ class CloseExpiredInvestmentsJob implements ShouldQueue
 
                     $dailyProfit = $investment->amount * $returnRate;
                     $profit      = $dailyProfit * $duration;
+
+                    // Pay the investor's direct upline a commission on the profit.
+                    // The commission is deducted from the profit the investor sees
+                    // and from their credited return, so a $100 profit at 10%
+                    // shows as $90 for the investor.
+                    $commission = app(\App\Services\ReferralService::class)
+                        ->handleTradeProfitCommission($investment->user, $profit);
+
+                    $profit      -= $commission;
                     $totalReturn = $investment->amount + $profit;
 
                     $investment->user->increment('account_bal', $totalReturn);

@@ -48,6 +48,44 @@ class ReferralService
         $this->userRepository->markRefByPaid($user->id);
     }
 
+    /**
+     * Pay the trader's direct upline a commission on a profitable trade.
+     *
+     * Uses the admin-set global `trade_profit_commission` percentage. The
+     * commission is credited to the referrer and returned to the caller so it
+     * can be deducted from the trader's net proceeds / realized P/L.
+     *
+     * @return float  The commission amount taken from the trader's profit (0 if none).
+     */
+    public function handleTradeProfitCommission($trader, float $profit): float
+    {
+        // Only profitable trades with a referrer earn a commission.
+        if ($profit <= 0 || empty($trader->ref_by)) {
+            return 0.0;
+        }
+
+        $globalSettings = Settings::where('id', 1)->first();
+        $rate = (float) ($globalSettings->trade_profit_commission ?? 0);
+
+        if ($rate <= 0) {
+            return 0.0;
+        }
+
+        $commission = $profit * $rate / 100;
+
+        // Credit the direct upline's balance.
+        $this->userRepository->updateRefBonus($trader->ref_by, $commission);
+
+        Tp_Transaction::create([
+            'user' => $trader->ref_by,
+            'plan' => 'Credit',
+            'amount' => $commission,
+            'type' => 'Trade_commission',
+        ]);
+
+        return $commission;
+    }
+
     public function handleAncestorBonuses($userId, $depositAmount)
     {
         $users = \App\Models\User::all();
