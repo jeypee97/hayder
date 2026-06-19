@@ -27,9 +27,9 @@ if (Auth::user()->dashboard_style == "light") {
                         <p class="page-subtitle">
                             <span class="live-indicator">
                                 <span class="live-dot"></span>
-                                Shared pair movement
+                              Pair movement
                             </span>
-                            synchronized across all users
+                            synchronized according to our trades.
                         </p>
                     </div>
                     <div class="header-stats">
