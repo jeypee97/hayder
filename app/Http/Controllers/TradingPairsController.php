@@ -363,19 +363,20 @@ class TradingPairsController extends Controller
 
     private function syntheticPairDelta(int $seed, int $step): float
     {
-        $bullishBias = 0.72 + (($seed % 19) / 100);
+        $bullishBias = 0.55 + (($seed % 21) / 100);
         $roll = $this->syntheticRoll($seed, $step);
         $direction = $roll < $bullishBias ? 1 : -1;
-        $magnitude = 0.35 + ($this->syntheticRoll($seed + 97, $step) * 1.45);
-        $wave = sin(($step + ($seed % 29)) * 0.48) * 0.22;
-        $microPullback = cos(($step + ($seed % 41)) * 0.19) * 0.12;
+        $magnitude = 0.12 + ($this->syntheticRoll($seed + 97, $step) * 0.38);
+        $trendCarry = sin(($step + ($seed % 17)) * 0.08) * 0.11;
+        $wave = sin(($step + ($seed % 29)) * 0.18) * 0.07;
+        $microPullback = cos(($step + ($seed % 41)) * 0.11) * 0.04;
 
-        return ($direction * $magnitude) + $wave + $microPullback;
+        return ($direction * $magnitude) + $trendCarry + $wave + $microPullback;
     }
 
     private function syntheticWickSize(int $seed, int $step): float
     {
-        return abs(sin(($step + ($seed % 53)) * 0.27)) * 0.9 + 0.25;
+        return abs(sin(($step + ($seed % 53)) * 0.18)) * 0.45 + 0.12;
     }
 
     private function syntheticRoll(int $seed, int $step): float
