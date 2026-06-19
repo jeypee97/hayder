@@ -33,7 +33,7 @@ class TradingPairsController extends Controller
             // Optional: flash a message or log
             session()->flash('info', 'You have no recent trades.');
         }
-            // dd($investments);
+        // dd($investments);
         $settings = Settings::first() ?? new Settings(['currency' => 'USD']);
         return view('user.recent-trades', compact('investments', 'settings'));
     }
@@ -308,6 +308,71 @@ class TradingPairsController extends Controller
         return view('user.invest-trading-pair', compact('tradingPair', 'settings'));
     }
 
+    public function chartFeed(TradingPair $tradingPair)
+    {
+        $intervalSeconds = 20;
+        $points = 48;
+        $currentStep = intdiv(now()->timestamp, $intervalSeconds);
+        $startStep = $currentStep - ($points - 1);
+        $seed = abs(crc32((string) $tradingPair->id));
+
+        $line = [];
+        $candles = [];
+
+        for ($step = $startStep; $step <= $currentStep; $step++) {
+            $open = $this->syntheticPairValue($seed, $step - 1);
+            $close = $this->syntheticPairValue($seed, $step);
+            $wickSize = $this->syntheticWickSize($seed, $step);
+
+            $high = max($open, $close) + $wickSize;
+            $low = max(1, min($open, $close) - $wickSize);
+
+            $line[] = [
+                't' => $step * $intervalSeconds,
+                'v' => round($close, 4),
+            ];
+
+            $candles[] = [
+                't' => $step * $intervalSeconds,
+                'o' => round($open, 4),
+                'h' => round($high, 4),
+                'l' => round($low, 4),
+                'c' => round($close, 4),
+            ];
+        }
+
+        $first = $line[0]['v'] ?? 0;
+        $last = $line[count($line) - 1]['v'] ?? 0;
+        $trend = $last >= $first ? 'up' : 'down';
+
+        return response()->json([
+            'success' => true,
+            'pair' => strtoupper($tradingPair->base_symbol) . '/' . strtoupper($tradingPair->quote_symbol),
+            'trend' => $trend,
+            'line' => $line,
+            'candles' => $candles,
+            'interval' => $intervalSeconds,
+            'generated_at' => now()->timestamp,
+        ]);
+    }
+
+    private function syntheticPairValue(int $seed, int $step): float
+    {
+        $base = 100 + ($seed % 17);
+
+        $waveA = sin(($step + ($seed % 23)) * 0.35) * 5.8;
+        $waveB = sin(($step + ($seed % 41)) * 0.12) * 10.4;
+        $waveC = sin(($step + ($seed % 67)) * 0.04) * 16.2;
+        $drift = sin(($step + ($seed % 29)) * 0.008) * 8.0;
+
+        return max(1, $base + $waveA + $waveB + $waveC + $drift);
+    }
+
+    private function syntheticWickSize(int $seed, int $step): float
+    {
+        return abs(sin(($step + ($seed % 53)) * 0.27)) * 1.6 + 0.35;
+    }
+
     public function storeInvestment(Request $request, TradingPair $tradingPair)
     {
         $user = Auth::user();
@@ -434,4 +499,3 @@ class TradingPairsController extends Controller
 
 
 }
-?>

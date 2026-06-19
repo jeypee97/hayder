@@ -47,13 +47,27 @@ if (Auth::user()->dashboard_style == "light") {
                                 </div>
                             </div>
                             <div class="coin-price">
-                                <span class="price-label">Current Price</span>
-                                <span class="price-value">{{ $settings->currency }}{{ number_format($tradingPair->current_price, 2) }}</span>
-                                <span class="price-change {{ $tradingPair->price_change_24h >= 0 ? 'positive' : 'negative' }}">
-                                    <i class="fa fa-{{ $tradingPair->price_change_24h >= 0 ? 'caret-up' : 'caret-down' }}"></i>
-                                    {{ $tradingPair->price_change_24h >= 0 ? '+' : '' }}{{ number_format($tradingPair->price_change_24h, 2) }}%
+                                <span class="price-label">Market Direction</span>
+                                <span class="price-value" id="market-direction-label">{{ $tradingPair->price_change_24h >= 0 ? 'Uptrend' : 'Downtrend' }}</span>
+                                <span id="market-direction-badge" class="price-change {{ $tradingPair->price_change_24h >= 0 ? 'positive' : 'negative' }}">
+                                    <i class="fa fa-{{ $tradingPair->price_change_24h >= 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                    {{ $tradingPair->price_change_24h >= 0 ? 'Momentum rising' : 'Momentum falling' }}
                                 </span>
                             </div>
+                        </div>
+
+                        <div class="pair-chart-shell">
+                            <div class="pair-chart-toolbar">
+                                <div class="chart-type-switch">
+                                    <button type="button" class="chart-type-btn active" data-chart-mode="line">Line</button>
+                                    {{-- <button type="button" class="chart-type-btn" data-chart-mode="candles">Candlestick</button> --}}
+                                </div>
+                                <div class="chart-trend-badge" id="chart-trend-badge">Trend: Up</div>
+                            </div>
+                            <div class="pair-chart-canvas" id="pair-chart-canvas">
+                                <svg id="pair-chart-svg" viewBox="0 0 100 48" preserveAspectRatio="none" aria-label="Pair trend chart"></svg>
+                            </div>
+                            {{-- <p class="chart-footnote">Illustrative movement only. Chart does not represent live market prices.</p> --}}
                         </div>
 
                         <!-- Investment Form -->
@@ -422,6 +436,89 @@ if (Auth::user()->dashboard_style == "light") {
 
         .price-change.negative {
             color: #ef4444;
+        }
+
+        .pair-chart-shell {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .pair-chart-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-type-switch {
+            display: inline-flex;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .chart-type-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-type-btn.active {
+            background: rgba(99, 102, 241, 0.16);
+            color: #6366f1;
+        }
+
+        .chart-trend-badge {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.14);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+
+        .chart-trend-badge.down {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .pair-chart-canvas {
+            width: 100%;
+            height: 260px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.01) 100%);
+            overflow: hidden;
+            border: 1px solid rgba(99, 102, 241, 0.12);
+        }
+
+        .pair-chart-canvas svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        .pair-chart-canvas svg.is-dragging {
+            cursor: grabbing;
+        }
+
+        .chart-footnote {
+            margin: 10px 0 0;
+            font-size: 0.78rem;
+            color: var(--text-muted);
         }
 
         /* Form Sections */
@@ -931,11 +1028,20 @@ if (Auth::user()->dashboard_style == "light") {
         const previewDuration = document.getElementById('previewDuration');
         const previewProfit = document.getElementById('previewProfit');
 
+        const chartSvg = document.getElementById('pair-chart-svg');
+        const chartModeButtons = document.querySelectorAll('.chart-type-btn');
+        const chartTrendBadge = document.getElementById('chart-trend-badge');
+        const marketDirectionLabel = document.getElementById('market-direction-label');
+        const marketDirectionBadge = document.getElementById('market-direction-badge');
+
         const currency = '{{ $settings->currency }}';
         const minReturn = {{ $tradingPair->min_return_percentage }};
         const maxReturn = {{ $tradingPair->max_return_percentage }};
+        const chartFeedUrl = '{{ route('user.trading-pairs.chart-feed', $tradingPair->id) }}';
 
-        // Update preview
+        let chartMode = 'line';
+        let chartTimer = null;
+
         function updatePreview() {
             const amount = parseFloat(amountInput.value) || 0;
             const selectedDuration = document.querySelector('input[name="duration"]:checked');
@@ -949,7 +1055,294 @@ if (Auth::user()->dashboard_style == "light") {
             previewProfit.textContent = `${currency}${minProfit} — ${currency}${maxProfit}`;
         }
 
-        // Quick amount buttons
+        function normalizeValues(values) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+            return values.map(value => ((value - min) / spread));
+        }
+
+        function toChartY(normalizedValue) {
+            return 4 + (1 - normalizedValue) * 40;
+        }
+
+        function renderLineChart(series, trend) {
+            if (!series.length) {
+                chartSvg.innerHTML = '';
+                return;
+            }
+
+            const normalized = normalizeValues(series);
+            const stepX = series.length > 1 ? 100 / (series.length - 1) : 100;
+
+            let linePath = '';
+            normalized.forEach((value, index) => {
+                const x = (index * stepX).toFixed(3);
+                const y = toChartY(value).toFixed(3);
+                linePath += `${index === 0 ? 'M' : 'L'} ${x} ${y} `;
+            });
+
+            const color = trend === 'up' ? '#10b981' : '#ef4444';
+
+            chartSvg.innerHTML = `
+                <defs>
+                    <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop>
+                        <stop offset="100%" stop-color="${color}" stop-opacity="0"></stop>
+                    </linearGradient>
+                </defs>
+                <path d="${linePath} L 100 46 L 0 46 Z" fill="url(#lineFill)"></path>
+                <path d="${linePath}" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round"></path>
+            `;
+        }
+
+        function renderCandles(candles) {
+            if (!candles.length) {
+                chartSvg.innerHTML = '';
+                return;
+            }
+
+            const values = [];
+            candles.forEach(candle => {
+                values.push(candle.o, candle.h, candle.l, candle.c);
+            });
+
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+
+            const normalize = value => (value - min) / spread;
+            const stepX = candles.length > 0 ? 100 / candles.length : 100;
+            const bodyWidth = Math.max(stepX * 0.58, 0.8);
+
+            let svg = '';
+
+            candles.forEach((candle, index) => {
+                const xCenter = (index * stepX) + (stepX / 2);
+                const openY = toChartY(normalize(candle.o));
+                const closeY = toChartY(normalize(candle.c));
+                const highY = toChartY(normalize(candle.h));
+                const lowY = toChartY(normalize(candle.l));
+                const bodyTop = Math.min(openY, closeY);
+                const bodyHeight = Math.max(Math.abs(openY - closeY), 0.8);
+                const rising = candle.c >= candle.o;
+                const bodyColor = rising ? '#10b981' : '#ef4444';
+
+                svg += `
+                    <line x1="${xCenter.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${xCenter.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${bodyColor}" stroke-width="0.35"></line>
+                    <rect x="${(xCenter - (bodyWidth / 2)).toFixed(3)}" y="${bodyTop.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${bodyHeight.toFixed(3)}" fill="${bodyColor}" opacity="0.8" rx="0.2"></rect>
+                `;
+            });
+
+            chartSvg.innerHTML = svg;
+        }
+
+        function parseViewBox(svg) {
+            const raw = svg.dataset.baseViewBox || svg.getAttribute('viewBox') || '0 0 100 48';
+            const parts = raw.split(/\s+/).map(Number);
+            return {
+                x: parts[0] || 0,
+                y: parts[1] || 0,
+                width: parts[2] || 100,
+                height: parts[3] || 48,
+            };
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function ensureChartZoomState(svg) {
+            if (!svg.dataset.baseViewBox) {
+                svg.dataset.baseViewBox = svg.getAttribute('viewBox') || '0 0 100 48';
+            }
+
+            if (!svg._zoomState) {
+                const base = parseViewBox(svg);
+                svg._zoomState = {
+                    base,
+                    current: { ...base },
+                    dragging: false,
+                    startClientX: 0,
+                    startClientY: 0,
+                    startViewBox: { ...base },
+                };
+            }
+
+            return svg._zoomState;
+        }
+
+        function setChartViewBox(svg, box) {
+            svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+            if (svg._zoomState) {
+                svg._zoomState.current = { ...box };
+            }
+        }
+
+        function resetChartZoom(svg) {
+            const state = ensureChartZoomState(svg);
+            state.current = { ...state.base };
+            setChartViewBox(svg, state.base);
+        }
+
+        function zoomChart(svg, delta, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            const rect = svg.getBoundingClientRect();
+            const pointerX = clamp((clientX - rect.left) / rect.width, 0, 1);
+            const pointerY = clamp((clientY - rect.top) / rect.height, 0, 1);
+            const scale = delta < 0 ? 0.88 : 1.14;
+
+            const base = state.current;
+            const nextWidth = clamp(base.width * scale, state.base.width / 8, state.base.width);
+            const nextHeight = clamp(base.height * scale, state.base.height / 8, state.base.height);
+
+            const worldX = base.x + (base.width * pointerX);
+            const worldY = base.y + (base.height * pointerY);
+
+            const nextX = clamp(worldX - (nextWidth * pointerX), state.base.x, state.base.x + state.base.width - nextWidth);
+            const nextY = clamp(worldY - (nextHeight * pointerY), state.base.y, state.base.y + state.base.height - nextHeight);
+
+            setChartViewBox(svg, { x: nextX, y: nextY, width: nextWidth, height: nextHeight });
+        }
+
+        function panChart(svg, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            if (!state.dragging) {
+                return;
+            }
+
+            const rect = svg.getBoundingClientRect();
+            const deltaX = (clientX - state.startClientX) / rect.width * state.startViewBox.width;
+            const deltaY = (clientY - state.startClientY) / rect.height * state.startViewBox.height;
+
+            const nextX = clamp(state.startViewBox.x - deltaX, state.base.x, state.base.x + state.base.width - state.startViewBox.width);
+            const nextY = clamp(state.startViewBox.y - deltaY, state.base.y, state.base.y + state.base.height - state.startViewBox.height);
+
+            setChartViewBox(svg, {
+                x: nextX,
+                y: nextY,
+                width: state.startViewBox.width,
+                height: state.startViewBox.height,
+            });
+        }
+
+        function attachChartInteractions(svg) {
+            if (!svg || svg.dataset.zoomBound === '1') {
+                return;
+            }
+
+            ensureChartZoomState(svg);
+            svg.dataset.zoomBound = '1';
+
+            svg.addEventListener('wheel', event => {
+                event.preventDefault();
+                zoomChart(svg, event.deltaY, event.clientX, event.clientY);
+            }, { passive: false });
+
+            svg.addEventListener('pointerdown', event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = true;
+                state.startClientX = event.clientX;
+                state.startClientY = event.clientY;
+                state.startViewBox = { ...state.current };
+                svg.classList.add('is-dragging');
+                svg.setPointerCapture(event.pointerId);
+            });
+
+            svg.addEventListener('pointermove', event => {
+                panChart(svg, event.clientX, event.clientY);
+            });
+
+            const endDrag = event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+                if (event && svg.hasPointerCapture(event.pointerId)) {
+                    svg.releasePointerCapture(event.pointerId);
+                }
+            };
+
+            svg.addEventListener('pointerup', endDrag);
+            svg.addEventListener('pointercancel', endDrag);
+            svg.addEventListener('mouseleave', () => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+            });
+
+            svg.addEventListener('dblclick', () => {
+                resetChartZoom(svg);
+            });
+        }
+
+        function applyTrend(trend) {
+            const isUp = trend === 'up';
+
+            chartTrendBadge.textContent = `Trend: ${isUp ? 'Up' : 'Down'}`;
+            chartTrendBadge.classList.toggle('down', !isUp);
+
+            marketDirectionLabel.textContent = isUp ? 'Uptrend' : 'Downtrend';
+            marketDirectionBadge.classList.toggle('positive', isUp);
+            marketDirectionBadge.classList.toggle('negative', !isUp);
+            marketDirectionBadge.innerHTML = `<i class="fa fa-${isUp ? 'arrow-up' : 'arrow-down'}"></i> ${isUp ? 'Momentum rising' : 'Momentum falling'}`;
+        }
+
+        async function refreshPairChart() {
+            try {
+                const response = await fetch(chartFeedUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Chart feed failed with status ${response.status}`);
+                }
+
+                const payload = await response.json();
+                if (!payload.success) {
+                    return;
+                }
+
+                const lineValues = (payload.line || []).map(point => Number(point.v));
+                const candles = payload.candles || [];
+                const trend = payload.trend || 'up';
+
+                applyTrend(trend);
+
+                if (chartMode === 'candles') {
+                    renderCandles(candles);
+                    attachChartInteractions(chartSvg);
+                } else {
+                    renderLineChart(lineValues, trend);
+                    attachChartInteractions(chartSvg);
+                }
+            } catch (error) {
+                console.error('Failed to refresh chart:', error);
+            }
+        }
+
+        function setupChartModeToggle() {
+            chartModeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    chartModeButtons.forEach(item => item.classList.remove('active'));
+                    button.classList.add('active');
+                    chartMode = button.dataset.chartMode === 'candles' ? 'candles' : 'line';
+                    refreshPairChart();
+                });
+            });
+        }
+
+        function startChartAutoRefresh() {
+            refreshPairChart();
+
+            if (chartTimer) {
+                clearInterval(chartTimer);
+            }
+
+            chartTimer = setInterval(refreshPairChart, 10000);
+        }
+
         quickAmountBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 amountInput.value = parseFloat(this.dataset.amount).toFixed(2);
@@ -959,13 +1352,11 @@ if (Auth::user()->dashboard_style == "light") {
             });
         });
 
-        // Amount input change
         amountInput.addEventListener('input', function() {
             quickAmountBtns.forEach(b => b.classList.remove('active'));
             updatePreview();
         });
 
-        // Duration selection
         durationOptions.forEach(option => {
             option.addEventListener('click', function() {
                 durationOptions.forEach(o => o.classList.remove('selected'));
@@ -974,7 +1365,27 @@ if (Auth::user()->dashboard_style == "light") {
             });
         });
 
-        // Initial preview
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && chartTimer) {
+                clearInterval(chartTimer);
+                chartTimer = null;
+                return;
+            }
+
+            if (!document.hidden) {
+                startChartAutoRefresh();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (chartTimer) {
+                clearInterval(chartTimer);
+                chartTimer = null;
+            }
+        });
+
         updatePreview();
+        setupChartModeToggle();
+        startChartAutoRefresh();
     </script>
 @endsection

@@ -27,9 +27,9 @@ if (Auth::user()->dashboard_style == "light") {
                         <p class="page-subtitle">
                             <span class="live-indicator">
                                 <span class="live-dot"></span>
-                                Live prices
+                                Shared pair movement
                             </span>
-                            powered by CoinGecko
+                            synchronized across all users
                         </p>
                     </div>
                     <div class="header-stats">
@@ -63,6 +63,10 @@ if (Auth::user()->dashboard_style == "light") {
                             <button class="filter-tab" data-filter="gainers">Gainers</button>
                             <button class="filter-tab" data-filter="losers">Losers</button>
                         </div>
+                        <div class="chart-mode-switch" id="chartModeSwitch">
+                            <button type="button" class="chart-mode-btn active" data-mode="line">Line</button>
+                            {{-- <button type="button" class="chart-mode-btn" data-mode="candles">Candlestick</button> --}}
+                        </div>
                     </div>
 
                     <!-- Trading Pairs Grid -->
@@ -71,6 +75,7 @@ if (Auth::user()->dashboard_style == "light") {
                             <div class="pair-card"
                                  data-name="{{ strtolower($pair->base_name) }}"
                                  data-symbol="{{ strtolower($pair->base_symbol) }}"
+                                   data-pair-id="{{ $pair->id }}"
                                  data-change="{{ $pair->price_change_24h }}">
 
                                 <div class="pair-header">
@@ -88,17 +93,21 @@ if (Auth::user()->dashboard_style == "light") {
                                     <div class="pair-change" id="change-wrapper-{{ $pair->id }}">
                                         <span class="change-badge {{ $pair->price_change_24h >= 0 ? 'positive' : 'negative' }}"
                                               id="change-{{ $pair->id }}">
-                                            <i class="fa fa-{{ $pair->price_change_24h >= 0 ? 'caret-up' : 'caret-down' }}"></i>
-                                            {{ number_format(abs($pair->price_change_24h), 2) }}%
+                                            <i class="fa fa-{{ $pair->price_change_24h >= 0 ? 'arrow-up' : 'arrow-down' }}"></i>
+                                            {{ $pair->price_change_24h >= 0 ? 'Rising' : 'Falling' }}
                                         </span>
                                     </div>
                                 </div>
 
                                 <div class="pair-price">
-                                    <span class="price-label">Price</span>
-                                    <span class="price-value" id="price-{{ $pair->id }}">
-                                        {{ $settings->currency }}{{ number_format($pair->current_price, 2) }}
+                                    <span class="price-label">Market Direction</span>
+                                    <span class="price-value" id="direction-{{ $pair->id }}">
+                                        {{ $pair->price_change_24h >= 0 ? 'Uptrend' : 'Downtrend' }}
                                     </span>
+                                </div>
+
+                                <div class="pair-chart" id="pair-chart-{{ $pair->id }}">
+                                    <svg id="pair-chart-svg-{{ $pair->id }}" viewBox="0 0 100 38" preserveAspectRatio="none" aria-label="{{ $pair->base_symbol }} chart"></svg>
                                 </div>
 
                                 <div class="pair-stats">
@@ -330,6 +339,30 @@ if (Auth::user()->dashboard_style == "light") {
             gap: 8px;
         }
 
+        .chart-mode-switch {
+            display: inline-flex;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+
+        .chart-mode-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-mode-btn.active {
+            background: rgba(99, 102, 241, 0.16);
+            color: #6366f1;
+        }
+
         .filter-tab {
             padding: 10px 18px;
             background: var(--bg-card);
@@ -470,6 +503,28 @@ if (Auth::user()->dashboard_style == "light") {
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 16px;
+        }
+
+        .pair-chart {
+            width: 100%;
+            height: 110px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.01) 100%);
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+
+        .pair-chart svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        .pair-chart svg.is-dragging {
+            cursor: grabbing;
         }
 
         .stat-item {
@@ -707,38 +762,331 @@ if (Auth::user()->dashboard_style == "light") {
             });
         });
 
-        // Refresh prices
-        function refreshPrices() {
-            fetch('{{ route("admin.trading-pairs.refresh-prices") }}')
-                .then(response => response.json())
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        data.forEach(pair => {
-                            const priceElement = document.querySelector(`#price-${pair.id}`);
-                            const changeElement = document.querySelector(`#change-${pair.id}`);
-                            const card = document.querySelector(`.pair-card[data-change]`);
+        const pairsBaseUrl = '{{ url('/trading-pairs') }}';
+        const pairCards = document.querySelectorAll('.pair-card[data-pair-id]');
+        const chartModeButtons = document.querySelectorAll('.chart-mode-btn');
 
-                            if (priceElement) {
-                                priceElement.textContent = `{{ $settings->currency }}${parseFloat(pair.current_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                            }
+        let chartMode = 'line';
+        let chartRefreshTimer = null;
 
-                            if (changeElement) {
-                                const change = parseFloat(pair.price_change_24h);
-                                const isPositive = change >= 0;
-                                changeElement.className = `change-badge ${isPositive ? 'positive' : 'negative'}`;
-                                changeElement.innerHTML = `
-                                    <i class="fa fa-${isPositive ? 'caret-up' : 'caret-down'}"></i>
-                                    ${Math.abs(change).toFixed(2)}%
-                                `;
-                            }
-                        });
-                    }
-                })
-                .catch(error => console.error('Error refreshing prices:', error));
+        function normalizeSeries(values) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+            return values.map(value => (value - min) / spread);
         }
 
-        // Refresh every 15 seconds
-        setInterval(refreshPrices, 15000);
+        function toY(value) {
+            return 3 + (1 - value) * 32;
+        }
+
+        function renderLine(svg, series, trend) {
+            if (!series.length) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const normalized = normalizeSeries(series);
+            const step = series.length > 1 ? 100 / (series.length - 1) : 100;
+            const color = trend === 'up' ? '#10b981' : '#ef4444';
+
+            let path = '';
+            normalized.forEach((value, index) => {
+                const x = (step * index).toFixed(3);
+                const y = toY(value).toFixed(3);
+                path += `${index === 0 ? 'M' : 'L'} ${x} ${y} `;
+            });
+
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="pairLineFill-${svg.id}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop>
+                        <stop offset="100%" stop-color="${color}" stop-opacity="0"></stop>
+                    </linearGradient>
+                </defs>
+                <path d="${path} L 100 36 L 0 36 Z" fill="url(#pairLineFill-${svg.id})"></path>
+                <path d="${path}" fill="none" stroke="${color}" stroke-width="1.1" stroke-linecap="round"></path>
+            `;
+        }
+
+        function renderCandles(svg, candles) {
+            if (!candles.length) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const values = [];
+            candles.forEach(item => values.push(item.o, item.h, item.l, item.c));
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+            const scale = value => (value - min) / spread;
+
+            const step = 100 / candles.length;
+            const bodyWidth = Math.max(step * 0.58, 0.9);
+            let html = '';
+
+            candles.forEach((candle, index) => {
+                const x = index * step + step / 2;
+                const openY = toY(scale(candle.o));
+                const closeY = toY(scale(candle.c));
+                const highY = toY(scale(candle.h));
+                const lowY = toY(scale(candle.l));
+                const top = Math.min(openY, closeY);
+                const height = Math.max(Math.abs(openY - closeY), 0.8);
+                const rising = candle.c >= candle.o;
+                const color = rising ? '#10b981' : '#ef4444';
+
+                html += `
+                    <line x1="${x.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${x.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${color}" stroke-width="0.35"></line>
+                    <rect x="${(x - bodyWidth / 2).toFixed(3)}" y="${top.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${height.toFixed(3)}" fill="${color}" opacity="0.84" rx="0.2"></rect>
+                `;
+            });
+
+            svg.innerHTML = html;
+        }
+
+        function parseViewBox(svg) {
+            const raw = svg.dataset.baseViewBox || svg.getAttribute('viewBox') || '0 0 100 38';
+            const parts = raw.split(/\s+/).map(Number);
+            return {
+                x: parts[0] || 0,
+                y: parts[1] || 0,
+                width: parts[2] || 100,
+                height: parts[3] || 38,
+            };
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function ensureChartZoomState(svg) {
+            if (!svg.dataset.baseViewBox) {
+                svg.dataset.baseViewBox = svg.getAttribute('viewBox') || '0 0 100 38';
+            }
+
+            if (!svg._zoomState) {
+                const base = parseViewBox(svg);
+                svg._zoomState = {
+                    base,
+                    current: { ...base },
+                    dragging: false,
+                    startClientX: 0,
+                    startClientY: 0,
+                    startViewBox: { ...base },
+                };
+            }
+
+            return svg._zoomState;
+        }
+
+        function setChartViewBox(svg, box) {
+            svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+            if (svg._zoomState) {
+                svg._zoomState.current = { ...box };
+            }
+        }
+
+        function resetChartZoom(svg) {
+            const state = ensureChartZoomState(svg);
+            state.current = { ...state.base };
+            setChartViewBox(svg, state.base);
+        }
+
+        function zoomChart(svg, delta, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            const rect = svg.getBoundingClientRect();
+            const pointerX = clamp((clientX - rect.left) / rect.width, 0, 1);
+            const pointerY = clamp((clientY - rect.top) / rect.height, 0, 1);
+            const scale = delta < 0 ? 0.88 : 1.14;
+
+            const base = state.current;
+            const nextWidth = clamp(base.width * scale, state.base.width / 8, state.base.width);
+            const nextHeight = clamp(base.height * scale, state.base.height / 8, state.base.height);
+
+            const worldX = base.x + (base.width * pointerX);
+            const worldY = base.y + (base.height * pointerY);
+
+            const nextX = clamp(worldX - (nextWidth * pointerX), state.base.x, state.base.x + state.base.width - nextWidth);
+            const nextY = clamp(worldY - (nextHeight * pointerY), state.base.y, state.base.y + state.base.height - nextHeight);
+
+            setChartViewBox(svg, { x: nextX, y: nextY, width: nextWidth, height: nextHeight });
+        }
+
+        function panChart(svg, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            if (!state.dragging) {
+                return;
+            }
+
+            const rect = svg.getBoundingClientRect();
+            const deltaX = (clientX - state.startClientX) / rect.width * state.startViewBox.width;
+            const deltaY = (clientY - state.startClientY) / rect.height * state.startViewBox.height;
+
+            const nextX = clamp(state.startViewBox.x - deltaX, state.base.x, state.base.x + state.base.width - state.startViewBox.width);
+            const nextY = clamp(state.startViewBox.y - deltaY, state.base.y, state.base.y + state.base.height - state.startViewBox.height);
+
+            setChartViewBox(svg, {
+                x: nextX,
+                y: nextY,
+                width: state.startViewBox.width,
+                height: state.startViewBox.height,
+            });
+        }
+
+        function attachChartInteractions(svg) {
+            if (!svg || svg.dataset.zoomBound === '1') {
+                return;
+            }
+
+            ensureChartZoomState(svg);
+            svg.dataset.zoomBound = '1';
+
+            svg.addEventListener('wheel', event => {
+                event.preventDefault();
+                zoomChart(svg, event.deltaY, event.clientX, event.clientY);
+            }, { passive: false });
+
+            svg.addEventListener('pointerdown', event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = true;
+                state.startClientX = event.clientX;
+                state.startClientY = event.clientY;
+                state.startViewBox = { ...state.current };
+                svg.classList.add('is-dragging');
+                svg.setPointerCapture(event.pointerId);
+            });
+
+            svg.addEventListener('pointermove', event => {
+                panChart(svg, event.clientX, event.clientY);
+            });
+
+            const endDrag = event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+                if (event && svg.hasPointerCapture(event.pointerId)) {
+                    svg.releasePointerCapture(event.pointerId);
+                }
+            };
+
+            svg.addEventListener('pointerup', endDrag);
+            svg.addEventListener('pointercancel', endDrag);
+            svg.addEventListener('mouseleave', () => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+            });
+
+            svg.addEventListener('dblclick', () => {
+                resetChartZoom(svg);
+            });
+        }
+
+        function applyDirection(card, trend) {
+            const pairId = card.dataset.pairId;
+            const directionLabel = document.getElementById(`direction-${pairId}`);
+            const changeBadge = document.getElementById(`change-${pairId}`);
+            const isUp = trend === 'up';
+
+            if (directionLabel) {
+                directionLabel.textContent = isUp ? 'Uptrend' : 'Downtrend';
+            }
+
+            if (changeBadge) {
+                changeBadge.className = `change-badge ${isUp ? 'positive' : 'negative'}`;
+                changeBadge.innerHTML = `<i class="fa fa-${isUp ? 'arrow-up' : 'arrow-down'}"></i> ${isUp ? 'Rising' : 'Falling'}`;
+            }
+        }
+
+        async function refreshCardChart(card) {
+            const pairId = card.dataset.pairId;
+            const svg = document.getElementById(`pair-chart-svg-${pairId}`);
+
+            if (!pairId || !svg) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${pairsBaseUrl}/${pairId}/chart-feed`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const payload = await response.json();
+                if (!payload.success) {
+                    return;
+                }
+
+                const trend = payload.trend || 'up';
+                const line = (payload.line || []).map(point => Number(point.v));
+                const candles = payload.candles || [];
+
+                applyDirection(card, trend);
+
+                if (chartMode === 'candles') {
+                    renderCandles(svg, candles);
+                    attachChartInteractions(svg);
+                    return;
+                }
+
+                renderLine(svg, line, trend);
+                attachChartInteractions(svg);
+            } catch (error) {
+                console.error('Error refreshing pair chart:', error);
+            }
+        }
+
+        function refreshAllCharts() {
+            pairCards.forEach(card => {
+                refreshCardChart(card);
+            });
+        }
+
+        chartModeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                chartModeButtons.forEach(item => item.classList.remove('active'));
+                button.classList.add('active');
+                chartMode = button.dataset.mode === 'candles' ? 'candles' : 'line';
+                refreshAllCharts();
+            });
+        });
+
+        function startChartRefresh() {
+            refreshAllCharts();
+
+            if (chartRefreshTimer) {
+                clearInterval(chartRefreshTimer);
+            }
+
+            chartRefreshTimer = setInterval(refreshAllCharts, 12000);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && chartRefreshTimer) {
+                clearInterval(chartRefreshTimer);
+                chartRefreshTimer = null;
+                return;
+            }
+
+            if (!document.hidden) {
+                startChartRefresh();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (chartRefreshTimer) {
+                clearInterval(chartRefreshTimer);
+            }
+        });
+
+        startChartRefresh();
     </script>
 
 @endsection

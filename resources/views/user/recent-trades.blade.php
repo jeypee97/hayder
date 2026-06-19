@@ -71,6 +71,14 @@ if (Auth::user()->dashboard_style == "light") {
                             </div>
                         </div>
                     </div>
+
+                    <div class="history-chart-toolbar">
+                        <span class="history-chart-note">Pair movement charts are shared per trading pair.</span>
+                        <div class="history-chart-mode-switch" id="historyChartModeSwitch">
+                            <button type="button" class="history-chart-mode-btn active" data-mode="line">Line</button>
+                            {{-- <button type="button" class="history-chart-mode-btn" data-mode="candles">Candlestick</button> --}}
+                        </div>
+                    </div>
                 @endif
 
                 <!-- Trades Content -->
@@ -127,8 +135,27 @@ if (Auth::user()->dashboard_style == "light") {
                                                     Completed
                                                 </span>
                                             @endif
+
+                                            @if($investment->tradingPair)
+                                                <span class="status-badge trend" id="trend-badge-{{ $investment->id }}">
+                                                    <i class="fa fa-arrow-up"></i>
+                                                    Uptrend
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
+
+                                    @if($investment->tradingPair)
+                                        <div class="trade-chart-wrap">
+                                            <svg class="trade-chart-svg"
+                                                 id="trade-chart-svg-{{ $investment->id }}"
+                                                 data-investment-id="{{ $investment->id }}"
+                                                 data-pair-id="{{ $investment->tradingPair->id }}"
+                                                 viewBox="0 0 100 36"
+                                                 preserveAspectRatio="none"
+                                                 aria-label="{{ $investment->tradingPair->base_symbol }} trend chart"></svg>
+                                        </div>
+                                    @endif
 
                                     <div class="trade-details">
                                         <div class="detail-item">
@@ -139,6 +166,7 @@ if (Auth::user()->dashboard_style == "light") {
                                             <span class="detail-label">Profit</span>
                                             <span class="detail-value profit-display"
                                                   data-investment-id="{{ $investment->id }}"
+                                                  data-pair-id="{{ $investment->tradingPair ? $investment->tradingPair->id : '' }}"
                                                   data-amount="{{ $investment->amount }}"
                                                   data-min-return="{{ $investment->tradingPair ? $investment->tradingPair->min_return_percentage : 0 }}"
                                                   data-max-return="{{ $investment->tradingPair ? $investment->tradingPair->max_return_percentage : 0 }}"
@@ -345,6 +373,44 @@ if (Auth::user()->dashboard_style == "light") {
             color: var(--text-secondary);
         }
 
+        .history-chart-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .history-chart-note {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .history-chart-mode-switch {
+            display: inline-flex;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+
+        .history-chart-mode-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-chart-mode-btn.active {
+            background: rgba(99, 102, 241, 0.16);
+            color: #6366f1;
+        }
+
         /* Trades Card */
         .trades-card {
             background: var(--bg-card);
@@ -458,6 +524,17 @@ if (Auth::user()->dashboard_style == "light") {
             color: #6366f1;
         }
 
+        .status-badge.trend {
+            margin-left: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .status-badge.trend.down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -479,6 +556,28 @@ if (Auth::user()->dashboard_style == "light") {
             padding: 16px 0;
             border-top: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
+        }
+
+        .trade-chart-wrap {
+            width: 100%;
+            height: 95px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.01) 100%);
+            overflow: hidden;
+            margin: 0 0 16px;
+        }
+
+        .trade-chart-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        .trade-chart-svg.is-dragging {
+            cursor: grabbing;
         }
 
         @media (max-width: 576px) {
@@ -653,33 +752,392 @@ if (Auth::user()->dashboard_style == "light") {
 
     <script>
         const currency = '{{ $settings->currency }}';
+        const pairsBaseUrl = '{{ url('/trading-pairs') }}';
+        const historyChartModeButtons = document.querySelectorAll('.history-chart-mode-btn');
+        const tradeChartNodes = document.querySelectorAll('.trade-chart-svg[data-pair-id]');
+        const profitElements = document.querySelectorAll('.profit-display');
 
-        function simulateProfits() {
-            const profitElements = document.querySelectorAll('.profit-display');
+        let historyChartMode = 'line';
+        let historyChartTimer = null;
+        const liveProfitState = new Map();
 
+        function normalizeSeries(values) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+            return values.map(value => (value - min) / spread);
+        }
+
+        function toChartY(value) {
+            return 3 + (1 - value) * 30;
+        }
+
+        function renderLineChart(svg, series, trend) {
+            if (!series.length) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const normalized = normalizeSeries(series);
+            const step = series.length > 1 ? 100 / (series.length - 1) : 100;
+            const color = trend === 'up' ? '#10b981' : '#ef4444';
+
+            let path = '';
+            normalized.forEach((value, index) => {
+                const x = (step * index).toFixed(3);
+                const y = toChartY(value).toFixed(3);
+                path += `${index === 0 ? 'M' : 'L'} ${x} ${y} `;
+            });
+
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="historyLineFill-${svg.id}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop>
+                        <stop offset="100%" stop-color="${color}" stop-opacity="0"></stop>
+                    </linearGradient>
+                </defs>
+                <path d="${path} L 100 33 L 0 33 Z" fill="url(#historyLineFill-${svg.id})"></path>
+                <path d="${path}" fill="none" stroke="${color}" stroke-width="1.1" stroke-linecap="round"></path>
+            `;
+        }
+
+        function renderCandleChart(svg, candles) {
+            if (!candles.length) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const values = [];
+            candles.forEach(item => values.push(item.o, item.h, item.l, item.c));
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const spread = Math.max(max - min, 0.001);
+            const scale = value => (value - min) / spread;
+
+            const step = 100 / candles.length;
+            const bodyWidth = Math.max(step * 0.58, 0.9);
+            let html = '';
+
+            candles.forEach((candle, index) => {
+                const x = index * step + (step / 2);
+                const openY = toChartY(scale(candle.o));
+                const closeY = toChartY(scale(candle.c));
+                const highY = toChartY(scale(candle.h));
+                const lowY = toChartY(scale(candle.l));
+                const top = Math.min(openY, closeY);
+                const height = Math.max(Math.abs(openY - closeY), 0.8);
+                const rising = candle.c >= candle.o;
+                const color = rising ? '#10b981' : '#ef4444';
+
+                html += `
+                    <line x1="${x.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${x.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${color}" stroke-width="0.35"></line>
+                    <rect x="${(x - bodyWidth / 2).toFixed(3)}" y="${top.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${height.toFixed(3)}" fill="${color}" opacity="0.84" rx="0.2"></rect>
+                `;
+            });
+
+            svg.innerHTML = html;
+        }
+
+        function applyTrendBadge(investmentId, trend) {
+            const badge = document.getElementById(`trend-badge-${investmentId}`);
+            if (!badge) {
+                return;
+            }
+
+            const up = trend === 'up';
+            badge.classList.toggle('down', !up);
+            badge.innerHTML = `<i class="fa fa-${up ? 'arrow-up' : 'arrow-down'}"></i> ${up ? 'Uptrend' : 'Downtrend'}`;
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function renderCompletedProfits() {
             profitElements.forEach(element => {
                 const status = element.dataset.status;
-                if (status !== 'active') {
-                    // For completed trades, just show the final profit
-                    const profit = parseFloat(element.dataset.profit);
-                    element.textContent = `${currency}${profit.toFixed(2)}`;
-                    element.classList.add(profit >= 0 ? 'profit-positive' : 'profit-negative');
+                if (status === 'active') {
                     return;
                 }
 
-                const amount = parseFloat(element.dataset.amount);
-                const minReturn = parseFloat(element.dataset.minReturn) / 100;
-                const maxReturn = parseFloat(element.dataset.maxReturn) / 100;
-
-                const minProfit = -minReturn * amount;
-                const maxProfit = maxReturn * amount;
-                const randomProfit = Math.random() * (maxProfit - minProfit) + minProfit;
-
-                element.textContent = `${currency}${randomProfit.toFixed(2)}`;
+                const profit = parseFloat(element.dataset.profit || '0');
+                element.textContent = `${currency}${profit.toFixed(2)}`;
                 element.classList.remove('profit-positive', 'profit-negative');
-                element.classList.add(randomProfit >= 0 ? 'profit-positive' : 'profit-negative');
+                element.classList.add(profit >= 0 ? 'profit-positive' : 'profit-negative');
             });
         }
+
+        function parseViewBox(svg) {
+            const raw = svg.dataset.baseViewBox || svg.getAttribute('viewBox') || '0 0 100 36';
+            const parts = raw.split(/\s+/).map(Number);
+            return {
+                x: parts[0] || 0,
+                y: parts[1] || 0,
+                width: parts[2] || 100,
+                height: parts[3] || 36,
+            };
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function ensureChartZoomState(svg) {
+            if (!svg.dataset.baseViewBox) {
+                svg.dataset.baseViewBox = svg.getAttribute('viewBox') || '0 0 100 36';
+            }
+
+            if (!svg._zoomState) {
+                const base = parseViewBox(svg);
+                svg._zoomState = {
+                    base,
+                    current: { ...base },
+                    dragging: false,
+                    startClientX: 0,
+                    startClientY: 0,
+                    startViewBox: { ...base },
+                };
+            }
+
+            return svg._zoomState;
+        }
+
+        function setChartViewBox(svg, box) {
+            svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+            if (svg._zoomState) {
+                svg._zoomState.current = { ...box };
+            }
+        }
+
+        function resetChartZoom(svg) {
+            const state = ensureChartZoomState(svg);
+            state.current = { ...state.base };
+            setChartViewBox(svg, state.base);
+        }
+
+        function zoomChart(svg, delta, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            const rect = svg.getBoundingClientRect();
+            const pointerX = clamp((clientX - rect.left) / rect.width, 0, 1);
+            const pointerY = clamp((clientY - rect.top) / rect.height, 0, 1);
+            const scale = delta < 0 ? 0.88 : 1.14;
+
+            const base = state.current;
+            const nextWidth = clamp(base.width * scale, state.base.width / 8, state.base.width);
+            const nextHeight = clamp(base.height * scale, state.base.height / 8, state.base.height);
+
+            const worldX = base.x + (base.width * pointerX);
+            const worldY = base.y + (base.height * pointerY);
+
+            const nextX = clamp(worldX - (nextWidth * pointerX), state.base.x, state.base.x + state.base.width - nextWidth);
+            const nextY = clamp(worldY - (nextHeight * pointerY), state.base.y, state.base.y + state.base.height - nextHeight);
+
+            setChartViewBox(svg, {
+                x: nextX,
+                y: nextY,
+                width: nextWidth,
+                height: nextHeight,
+            });
+        }
+
+        function panChart(svg, clientX, clientY) {
+            const state = ensureChartZoomState(svg);
+            if (!state.dragging) {
+                return;
+            }
+
+            const rect = svg.getBoundingClientRect();
+            const deltaX = (clientX - state.startClientX) / rect.width * state.startViewBox.width;
+            const deltaY = (clientY - state.startClientY) / rect.height * state.startViewBox.height;
+
+            const nextX = clamp(state.startViewBox.x - deltaX, state.base.x, state.base.x + state.base.width - state.startViewBox.width);
+            const nextY = clamp(state.startViewBox.y - deltaY, state.base.y, state.base.y + state.base.height - state.startViewBox.height);
+
+            setChartViewBox(svg, {
+                x: nextX,
+                y: nextY,
+                width: state.startViewBox.width,
+                height: state.startViewBox.height,
+            });
+        }
+
+        function attachChartInteractions(svg) {
+            if (!svg || svg.dataset.zoomBound === '1') {
+                return;
+            }
+
+            ensureChartZoomState(svg);
+            svg.dataset.zoomBound = '1';
+
+            svg.addEventListener('wheel', event => {
+                event.preventDefault();
+                zoomChart(svg, event.deltaY, event.clientX, event.clientY);
+            }, { passive: false });
+
+            svg.addEventListener('pointerdown', event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = true;
+                state.startClientX = event.clientX;
+                state.startClientY = event.clientY;
+                state.startViewBox = { ...state.current };
+                svg.classList.add('is-dragging');
+                svg.setPointerCapture(event.pointerId);
+            });
+
+            svg.addEventListener('pointermove', event => {
+                panChart(svg, event.clientX, event.clientY);
+            });
+
+            const endDrag = event => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+                if (event && svg.hasPointerCapture(event.pointerId)) {
+                    svg.releasePointerCapture(event.pointerId);
+                }
+            };
+
+            svg.addEventListener('pointerup', endDrag);
+            svg.addEventListener('pointercancel', endDrag);
+            svg.addEventListener('mouseleave', () => {
+                const state = ensureChartZoomState(svg);
+                state.dragging = false;
+                svg.classList.remove('is-dragging');
+            });
+
+            svg.addEventListener('dblclick', () => {
+                resetChartZoom(svg);
+            });
+        }
+
+        function updateActiveProfitFromFeed(element, payload) {
+            const investmentId = element.dataset.investmentId;
+            const amount = parseFloat(element.dataset.amount || '0');
+            const minReturn = parseFloat(element.dataset.minReturn || '0') / 100;
+            const maxReturn = parseFloat(element.dataset.maxReturn || '0') / 100;
+
+            const lineSeries = (payload.line || []).map(point => Number(point.v));
+            if (lineSeries.length < 2 || amount <= 0) {
+                return;
+            }
+
+            const last = lineSeries[lineSeries.length - 1];
+            const prev = lineSeries[lineSeries.length - 2];
+            const movingUp = last >= prev;
+
+            const minProfit = -minReturn * amount;
+            const maxProfit = maxReturn * amount;
+
+            const defaultProfit = parseFloat(element.dataset.profit || '0');
+            const currentProfit = liveProfitState.has(investmentId)
+                ? liveProfitState.get(investmentId)
+                : defaultProfit;
+
+            const movementRatio = Math.abs(last - prev) / Math.max(Math.abs(prev), 1);
+            const averageRange = (minReturn + maxReturn) / 2;
+            const baseStep = amount * averageRange * 0.08;
+            const movementStep = amount * movementRatio * 6;
+            const step = Math.max(baseStep + movementStep, amount * 0.001);
+
+            const nextProfit = clamp(
+                currentProfit + (movingUp ? step : -step),
+                minProfit,
+                maxProfit
+            );
+
+            liveProfitState.set(investmentId, nextProfit);
+
+            element.textContent = `${currency}${nextProfit.toFixed(2)}`;
+            element.classList.remove('profit-positive', 'profit-negative');
+            element.classList.add(nextProfit >= 0 ? 'profit-positive' : 'profit-negative');
+        }
+
+        async function fetchPairFeeds(pairIds) {
+            const uniquePairIds = Array.from(new Set(pairIds.filter(Boolean)));
+
+            const payloads = await Promise.all(uniquePairIds.map(async pairId => {
+                try {
+                    const response = await fetch(`${pairsBaseUrl}/${pairId}/chart-feed`, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        return [pairId, null];
+                    }
+
+                    const payload = await response.json();
+                    if (!payload.success) {
+                        return [pairId, null];
+                    }
+
+                    return [pairId, payload];
+                } catch (error) {
+                    console.error('Failed to refresh recent trade chart feed:', error);
+                    return [pairId, null];
+                }
+            }));
+
+            return new Map(payloads);
+        }
+
+        async function refreshAllTradeCharts() {
+            const pairIds = [
+                ...Array.from(tradeChartNodes).map(svg => svg.dataset.pairId),
+                ...Array.from(profitElements).map(node => node.dataset.pairId)
+            ];
+
+            const feedByPair = await fetchPairFeeds(pairIds);
+
+            tradeChartNodes.forEach(svg => {
+                const pairId = svg.dataset.pairId;
+                const investmentId = svg.dataset.investmentId;
+                const payload = feedByPair.get(pairId);
+
+                if (!payload) {
+                    return;
+                }
+
+                const trend = payload.trend || 'up';
+                const lineSeries = (payload.line || []).map(point => Number(point.v));
+                const candles = payload.candles || [];
+
+                applyTrendBadge(investmentId, trend);
+
+                if (historyChartMode === 'candles') {
+                    renderCandleChart(svg, candles);
+                    attachChartInteractions(svg);
+                    return;
+                }
+
+                renderLineChart(svg, lineSeries, trend);
+                attachChartInteractions(svg);
+            });
+
+            profitElements.forEach(element => {
+                if (element.dataset.status !== 'active') {
+                    return;
+                }
+
+                const pairId = element.dataset.pairId;
+                const payload = feedByPair.get(pairId);
+                if (!payload) {
+                    return;
+                }
+
+                updateActiveProfitFromFeed(element, payload);
+            });
+        }
+
+        historyChartModeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                historyChartModeButtons.forEach(item => item.classList.remove('active'));
+                button.classList.add('active');
+                historyChartMode = button.dataset.mode === 'candles' ? 'candles' : 'line';
+                refreshAllTradeCharts();
+            });
+        });
 
         function updateCountdowns() {
             const countdownElements = document.querySelectorAll('.countdown-timer');
@@ -741,13 +1199,34 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         // Initialize
-        simulateProfits();
+        renderCompletedProfits();
         updateCountdowns();
         updateProgressBars();
+        refreshAllTradeCharts();
 
         // Update intervals
-        setInterval(simulateProfits, 5000);
         setInterval(updateCountdowns, 1000);
         setInterval(updateProgressBars, 1000);
+
+        historyChartTimer = setInterval(refreshAllTradeCharts, 12000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && historyChartTimer) {
+                clearInterval(historyChartTimer);
+                historyChartTimer = null;
+                return;
+            }
+
+            if (!document.hidden) {
+                refreshAllTradeCharts();
+                historyChartTimer = setInterval(refreshAllTradeCharts, 12000);
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (historyChartTimer) {
+                clearInterval(historyChartTimer);
+            }
+        });
     </script>
 @endsection

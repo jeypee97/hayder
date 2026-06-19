@@ -7,8 +7,6 @@ use App\Http\Controllers\TradeController;
 use App\Http\Controllers\CryptoPaymentController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\TradingPairsController;
-
-
 use Illuminate\Support\Facades\Mail;
 
 /*
@@ -27,7 +25,7 @@ require __DIR__.'/user.php';
 
 
 // Route::group(['prefix' => 'payment'], function () {
-    // Route::get('/', [PaymentController::class, 'showPaymentForm'])->name('payment.form');
+// Route::get('/', [PaymentController::class, 'showPaymentForm'])->name('payment.form');
 //     Route::post('/create', [PaymentController::class, 'createPayment'])->name('payment.create');
 //     Route::get('/success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
 //     Route::get('/cancel', [PaymentController::class, 'paymentCancel'])->name('payment.cancel');
@@ -64,12 +62,12 @@ Route::middleware(['isadmin'])->prefix('admin')->name('admin.')->group(function 
     // Route::patch('/trading-pairs/toggle/{id}', [TradeController::class, 'togglePair'])->name('trading-pairs.toggle');
 });
 Route::get('/api/price/{symbol}', [TradeController::class, 'getApiPrice'])->name('api.price');
-    Route::get('/api/test-pairs', [TradeController::class, 'testPairs'])->name('api.test-pairs');
+Route::get('/api/test-pairs', [TradeController::class, 'testPairs'])->name('api.test-pairs');
 
-    Route::patch('/trade/{id}/close', [TradeController::class, 'closeTrade'])->name('trade.close')->middleware('auth');
+Route::patch('/trade/{id}/close', [TradeController::class, 'closeTrade'])->name('trade.close')->middleware('auth');
 
 
-    // In routes/web.php
+// In routes/web.php
 Route::get('/test-email', function () {
     try {
         Mail::raw('This is a test email from Laravel', function ($message) {
@@ -83,12 +81,15 @@ Route::get('/test-email', function () {
 });
 
 // Route::middleware(['auth'])->group(function () {
-    Route::get('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'showPair'])->name('trading.pair.show');
+Route::get('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'showPair'])->name('trading.pair.show');
 
-    Route::get('trading-pairs/{tradingPair}/invest', [TradingPairsController::class, 'invest'])->name('user.trading-pairs.invest');
+Route::get('/trading-pairs/{tradingPair}/chart-feed', [TradingPairsController::class, 'chartFeed'])
+    ->name('user.trading-pairs.chart-feed');
+
+Route::get('trading-pairs/{tradingPair}/invest', [TradingPairsController::class, 'invest'])->name('user.trading-pairs.invest');
 
 
-    Route::post('trading-pairs/{tradingPair}/invest', [TradingPairsController::class, 'storeInvestment'])->name('user.trading-pairs.store-investment');
+Route::post('trading-pairs/{tradingPair}/invest', [TradingPairsController::class, 'storeInvestment'])->name('user.trading-pairs.store-investment');
 
 
 
@@ -97,13 +98,13 @@ Route::get('/test-email', function () {
 
 //activate and deactivate Online Trader
 Route::any('/activate', function () {
-	return view('activate.index',[
-		'settings' => Settings::where('id','1')->first(),
-	]);
+    return view('activate.index', [
+        'settings' => Settings::where('id', '1')->first(),
+    ]);
 });
 
 Route::any('/revoke', function () {
-	return view('revoke.index');
+    return view('revoke.index');
 });
 
 
