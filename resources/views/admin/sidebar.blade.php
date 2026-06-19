@@ -39,14 +39,12 @@
                 </li>
                 @endif
 
-                @if (Auth('admin')->User()->type === 'Super Admin')
                 <li class="nav-item {{ (request()->routeIs('admin.trade-earnings')) ? 'active' : '' }}">
                     <a href="{{ route('admin.trade-earnings') }}">
                         <i class="fa fa-chart-line" aria-hidden="true"></i>
                         <p>Trade Earnings</p>
                     </a>
                 </li>
-                @endif
 
 
                 <li class="nav-item {{ (request()->routeIs('mdeposits')) ? 'active' : '' }} {{ (request()->routeIs('mwithdrawals')) ? 'active' : '' }} {{ (request()->routeIs('mdeposits')) ? 'active' : '' }} {{(request()->routeIs('viewdepositimage')) ? 'active' : '' }} {{ (request()->routeIs('processwithdraw')) ? 'active' : '' }}">

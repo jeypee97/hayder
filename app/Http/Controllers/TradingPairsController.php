@@ -382,11 +382,6 @@ class TradingPairsController extends Controller
      */
     public function tradeEarnings()
     {
-        // Restrict this report to Super Admins only.
-        if (optional(Auth('admin')->user())->type !== 'Super Admin') {
-            abort(403, 'Unauthorized access');
-        }
-
         $settings = Settings::first() ?? new Settings(['currency' => 'USD']);
 
         // One row per user: their total net profit and number of closed trades.
