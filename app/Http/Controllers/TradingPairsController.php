@@ -318,11 +318,14 @@ class TradingPairsController extends Controller
 
         $line = [];
         $candles = [];
+        $currentValue = 100 + ($seed % 17);
 
-        for ($step = $startStep; $step <= $currentStep; $step++) {
-            $open = $this->syntheticPairValue($seed, $step - 1);
-            $close = $this->syntheticPairValue($seed, $step);
-            $wickSize = $this->syntheticWickSize($seed, $step);
+        for ($index = 0; $index < $points; $index++) {
+            $step = $startStep + $index;
+            $open = $currentValue;
+            $delta = $this->syntheticPairDelta($seed, $index);
+            $close = max(1, $open + $delta);
+            $wickSize = $this->syntheticWickSize($seed, $index);
 
             $high = max($open, $close) + $wickSize;
             $low = max(1, min($open, $close) - $wickSize);
@@ -339,6 +342,8 @@ class TradingPairsController extends Controller
                 'l' => round($low, 4),
                 'c' => round($close, 4),
             ];
+
+            $currentValue = $close;
         }
 
         $first = $line[0]['v'] ?? 0;
@@ -356,21 +361,28 @@ class TradingPairsController extends Controller
         ]);
     }
 
-    private function syntheticPairValue(int $seed, int $step): float
+    private function syntheticPairDelta(int $seed, int $step): float
     {
-        $base = 100 + ($seed % 17);
+        $bullishBias = 0.72 + (($seed % 19) / 100);
+        $roll = $this->syntheticRoll($seed, $step);
+        $direction = $roll < $bullishBias ? 1 : -1;
+        $magnitude = 0.35 + ($this->syntheticRoll($seed + 97, $step) * 1.45);
+        $wave = sin(($step + ($seed % 29)) * 0.48) * 0.22;
+        $microPullback = cos(($step + ($seed % 41)) * 0.19) * 0.12;
 
-        $waveA = sin(($step + ($seed % 23)) * 0.35) * 5.8;
-        $waveB = sin(($step + ($seed % 41)) * 0.12) * 10.4;
-        $waveC = sin(($step + ($seed % 67)) * 0.04) * 16.2;
-        $drift = sin(($step + ($seed % 29)) * 0.008) * 8.0;
-
-        return max(1, $base + $waveA + $waveB + $waveC + $drift);
+        return ($direction * $magnitude) + $wave + $microPullback;
     }
 
     private function syntheticWickSize(int $seed, int $step): float
     {
-        return abs(sin(($step + ($seed % 53)) * 0.27)) * 1.6 + 0.35;
+        return abs(sin(($step + ($seed % 53)) * 0.27)) * 0.9 + 0.25;
+    }
+
+    private function syntheticRoll(int $seed, int $step): float
+    {
+        $hash = (float) sprintf('%u', crc32($seed . ':' . $step));
+
+        return $hash / 4294967295;
     }
 
     public function storeInvestment(Request $request, TradingPair $tradingPair)
