@@ -27,24 +27,30 @@ class CreateNewUser implements CreatesNewUsers
     {
         $settings=Settings::where('id','1')->first();
         $request = request();
-        if ($settings->captcha == "true") {
-            Validator::make($input, [
-                'name' => ['required', 'string', 'max:255'],
-                'username'=> ['required', 'unique:users,username'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'password' => $this->passwordRules(),
-                'g-recaptcha-response' => 'required|captcha',
-                'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate();
-        } else {
-            Validator::make($input, [
-                'name' => ['required', 'string', 'max:255'],
-                'username'=> ['required', 'unique:users,username'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'password' => $this->passwordRules(),
-                'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
-            ])->validate();
+
+        // If the user arrived via a referral link, the code is held in the
+        // session. Use it so the required-referral validation below passes.
+        if (session('ref_by')) {
+            $input['ref_by'] = session('ref_by');
         }
+
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'username'=> ['required', 'unique:users,username'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => $this->passwordRules(),
+            'ref_by' => ['required', 'exists:users,username'],
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['required', 'accepted'] : '',
+        ];
+
+        if ($settings->captcha == "true") {
+            $rules['g-recaptcha-response'] = 'required|captcha';
+        }
+
+        Validator::make($input, $rules, [
+            'ref_by.required' => 'A referral code is required to register.',
+            'ref_by.exists' => 'The referral code you entered is invalid.',
+        ])->validate();
         
         
         if(session('ref_by')) {

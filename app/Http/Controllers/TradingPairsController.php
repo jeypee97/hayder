@@ -374,6 +374,36 @@ class TradingPairsController extends Controller
             return back()->with('error', 'Failed to place investment.');
         }
     }
+    /**
+     * Platform-wide trade earnings: total profit made across all users and a
+     * per-user breakdown ordered by top earners. "Trades" here are the
+     * investments closed by CloseExpiredInvestmentsJob, whose `profit` is the
+     * net amount the user keeps (after any referral commission).
+     */
+    public function tradeEarnings()
+    {
+        // Restrict this report to Super Admins only.
+        if (optional(Auth('admin')->user())->type !== 'Super Admin') {
+            abort(403, 'Unauthorized access');
+        }
+
+        $settings = Settings::first() ?? new Settings(['currency' => 'USD']);
+
+        // One row per user: their total net profit and number of closed trades.
+        $earners = Investment::query()
+            ->selectRaw('user_id, SUM(profit) as total_profit, COUNT(*) as trades_count')
+            ->whereNotNull('profit')
+            ->groupBy('user_id')
+            ->orderByDesc('total_profit')
+            ->with('user')
+            ->get();
+
+        $platformTotal = $earners->sum('total_profit');
+        $earnersCount  = $earners->count();
+
+        return view('admin.trade-earnings', compact('earners', 'platformTotal', 'earnersCount', 'settings'));
+    }
+
     public function viewUserTrades(User $user)
     {
         $investments = Investment::with(['tradingPair'])

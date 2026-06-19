@@ -632,18 +632,25 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Referral ID (Optional)</label>
+                <label class="form-label">Referral Code</label>
                 <div class="input-wrapper">
                     <input
                         type="text"
                         class="form-control"
                         name="ref_by"
                         value="{{ session('ref_by') ?? old('ref_by') }}"
-                        placeholder="Enter referral ID"
+                        placeholder="Enter referral code"
+                        required
                         {{ Session::has('ref_by') ? 'readonly' : '' }}
                     >
                     <i class="fa fa-users"></i>
                 </div>
+                @if ($errors->has('ref_by'))
+                    <span class="error-text">
+                        <i class="fa fa-exclamation-circle"></i>
+                        {{ $errors->first('ref_by') }}
+                    </span>
+                @endif
             </div>
 
             @if($settings->captcha == "true")
