@@ -136,7 +136,7 @@ if (Auth::user()->dashboard_style == "light") {
                                                 </span>
                                             @endif
 
-                                            @if($investment->tradingPair)
+                                            @if($investment->tradingPair && $investment->status === 'active')
                                                 <span class="status-badge trend" id="trend-badge-{{ $investment->id }}">
                                                     <i class="fa fa-arrow-up"></i>
                                                     Uptrend
@@ -145,7 +145,7 @@ if (Auth::user()->dashboard_style == "light") {
                                         </div>
                                     </div>
 
-                                    @if($investment->tradingPair)
+                                    @if($investment->tradingPair && $investment->status === 'active')
                                         <div class="trade-chart-wrap">
                                             <svg class="trade-chart-svg"
                                                  id="trade-chart-svg-{{ $investment->id }}"
