@@ -315,10 +315,11 @@ if (Auth::user()->dashboard_style == "light") {
 
         .search-box input {
             width: 100%;
+            height: 42px;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 12px 14px 12px 42px;
+            padding: 0 14px 0 42px;
             font-size: 0.9rem;
             color: var(--text-primary);
             transition: all 0.2s ease;
@@ -341,6 +342,7 @@ if (Auth::user()->dashboard_style == "light") {
 
         .chart-mode-switch {
             display: inline-flex;
+            height: 42px;
             border: 1px solid var(--border-color);
             border-radius: 10px;
             overflow: hidden;
@@ -348,12 +350,15 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         .chart-mode-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: none;
             background: transparent;
             color: var(--text-secondary);
             font-size: 0.8rem;
             font-weight: 600;
-            padding: 10px 12px;
+            padding: 0 14px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -364,7 +369,11 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         .filter-tab {
-            padding: 10px 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 42px;
+            padding: 0 18px;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 8px;
