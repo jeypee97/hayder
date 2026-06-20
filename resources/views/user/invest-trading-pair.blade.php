@@ -197,7 +197,7 @@ if (Auth::user()->dashboard_style == "light") {
                     <!-- Sidebar Info -->
                     <div class="invest-sidebar">
                         <!-- Investment Parameters -->
-                        <div class="info-card params">
+                        {{-- <div class="info-card params">
                             <h4>
                                 <i class="fa fa-sliders-h"></i>
                                 Trade Parameters
@@ -220,7 +220,7 @@ if (Auth::user()->dashboard_style == "light") {
                                     <span class="param-value positive">{{ number_format($tradingPair->min_return_percentage, 1) }}% — {{ number_format($tradingPair->max_return_percentage, 1) }}%</span>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <!-- Your Balance -->
                         <div class="info-card balance">
