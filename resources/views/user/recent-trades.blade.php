@@ -1210,7 +1210,7 @@ if (Auth::user()->dashboard_style == "light") {
         setInterval(updateCountdowns, 1000);
         setInterval(updateProgressBars, 1000);
 
-        historyChartTimer = setInterval(refreshAllTradeCharts, 12000);
+        historyChartTimer = setInterval(refreshAllTradeCharts, 400);
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && historyChartTimer) {
@@ -1221,7 +1221,7 @@ if (Auth::user()->dashboard_style == "light") {
 
             if (!document.hidden) {
                 refreshAllTradeCharts();
-                historyChartTimer = setInterval(refreshAllTradeCharts, 12000);
+                historyChartTimer = setInterval(refreshAllTradeCharts, 400);
             }
         });
 

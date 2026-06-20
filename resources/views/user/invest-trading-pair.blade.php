@@ -1343,7 +1343,7 @@ if (Auth::user()->dashboard_style == "light") {
                 clearInterval(chartTimer);
             }
 
-            chartTimer = setInterval(refreshPairChart, 10000);
+            chartTimer = setInterval(refreshPairChart, 400);
         }
 
         quickAmountBtns.forEach(btn => {

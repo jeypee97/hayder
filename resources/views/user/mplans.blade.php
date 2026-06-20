@@ -1067,7 +1067,7 @@ if (Auth::user()->dashboard_style == "light") {
                 clearInterval(chartRefreshTimer);
             }
 
-            chartRefreshTimer = setInterval(refreshAllCharts, 12000);
+            chartRefreshTimer = setInterval(refreshAllCharts, 400);
         }
 
         document.addEventListener('visibilitychange', () => {

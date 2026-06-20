@@ -310,23 +310,45 @@ class TradingPairsController extends Controller
 
     public function chartFeed(TradingPair $tradingPair)
     {
-        $intervalSeconds = 20;
-        $points = 48;
-        $currentStep = intdiv(now()->timestamp, $intervalSeconds);
+        $intervalSeconds = 1;
+        $points = 60;
+        $now = microtime(true);
+        $currentStep = (int) floor($now / $intervalSeconds);
+        $secondsIntoStep = $now - ($currentStep * $intervalSeconds);
+        $progress = max(0.0, min(1.0, $secondsIntoStep / $intervalSeconds));
         $startStep = $currentStep - ($points - 1);
         $seed = abs(crc32((string) $tradingPair->id));
 
         $line = [];
         $candles = [];
-        $currentValue = 100 + ($seed % 17);
 
-        for ($index = 0; $index < $points; $index++) {
-            $step = $startStep + $index;
-            $open = $currentValue;
-            $delta = $this->syntheticPairDelta($seed, $index);
-            $close = max(1, $open + $delta);
-            $upperWick = $this->syntheticWickSize($seed, $index, 1.0);
-            $lowerWick = $this->syntheticWickSize($seed + 31, $index, 0.82);
+        for ($step = $startStep; $step <= $currentStep; $step++) {
+            $isCurrentCandle = $step === $currentStep;
+
+            // Open and close are pure functions of the absolute second, so every
+            // completed candle keeps the exact same shape on every poll (no pulsing
+            // as the 60s window slides). A candle's close == the next candle's open,
+            // so the series is continuous with no gaps.
+            $open = $this->pairPriceAt($seed, $step);
+            $targetClose = $this->pairPriceAt($seed, $step + 1);
+
+            if ($isCurrentCandle) {
+                // Live candle: walk the close steadily from the open toward the next
+                // second's price as the current second elapses. No mid-candle reversals.
+                $close = max(1, $open + (($targetClose - $open) * $progress));
+            } else {
+                $close = $targetClose;
+            }
+
+            $upperWick = $this->pairWickAt($seed, $step);
+            $lowerWick = $this->pairWickAt($seed + 31, $step);
+
+            if ($isCurrentCandle) {
+                // Wicks reach their full extent only as the second completes.
+                $wickGrowth = 0.35 + (0.65 * $progress);
+                $upperWick *= $wickGrowth;
+                $lowerWick *= $wickGrowth;
+            }
 
             $high = max($open, $close) + $upperWick;
             $low = max(1, min($open, $close) - $lowerWick);
@@ -343,8 +365,6 @@ class TradingPairsController extends Controller
                 'l' => round($low, 4),
                 'c' => round($close, 4),
             ];
-
-            $currentValue = $close;
         }
 
         $first = $line[0]['v'] ?? 0;
@@ -358,30 +378,41 @@ class TradingPairsController extends Controller
             'line' => $line,
             'candles' => $candles,
             'interval' => $intervalSeconds,
+            'candle_progress' => round($progress, 4),
             'generated_at' => now()->timestamp,
         ]);
     }
 
-    private function syntheticPairDelta(int $seed, int $step): float
+    /**
+     * Deterministic price level at the boundary of a given second.
+     *
+     * Because it depends only on the absolute step (timestamp) — never on the
+     * sliding window — every historical candle keeps the same open/close across
+     * polls, and one candle's close equals the next candle's open (continuous).
+     */
+    private function pairPriceAt(int $seed, int $step): float
     {
-        $bullishBias = 0.55 + (($seed % 21) / 100);
-        $roll = $this->syntheticRoll($seed, $step);
-        $direction = $roll < $bullishBias ? 1 : -1;
-        $magnitude = 0.12 + ($this->syntheticRoll($seed + 97, $step) * 0.42);
-        $trendCarry = sin(($step + ($seed % 17)) * 0.08) * 0.13;
-        $wave = sin(($step + ($seed % 29)) * 0.18) * 0.09;
-        $microPullback = cos(($step + ($seed % 41)) * 0.11) * 0.05;
-        $rangePulse = sin(($step + ($seed % 13)) * 0.31) * 0.06;
+        $base = 100 + ($seed % 17);
+        $phase = ($seed % 360) * (M_PI / 180);
 
-        return ($direction * $magnitude) + $trendCarry + $wave + $microPullback + $rangePulse;
+        $value = $base
+            + sin(($step * 0.045) + $phase) * 9.0          // slow trend swell
+            + sin(($step * 0.150) + $phase) * 5.0          // primary wave
+            + sin(($step * 0.370) + ($phase * 0.5)) * 2.2  // medium chop
+            + sin(($step * 0.910) + ($phase * 1.3)) * 1.0; // fine chop
+
+        return max(1, $value);
     }
 
-    private function syntheticWickSize(int $seed, int $step, float $scale = 1.0): float
+    /**
+     * Deterministic wick reach for a given second, anchored to the absolute step
+     * so historical wicks never change between polls.
+     */
+    private function pairWickAt(int $seed, int $step, float $scale = 1.0): float
     {
-        $base = abs(sin(($step + ($seed % 53)) * 0.18)) * 0.45 + 0.12;
-        $variance = 0.7 + ($this->syntheticRoll($seed + 211, $step) * 0.8);
+        $roll = $this->syntheticRoll($seed + 700, $step);
 
-        return $base * $variance * $scale;
+        return (0.4 + ($roll * 1.6)) * $scale;
     }
 
     private function syntheticRoll(int $seed, int $step): float
