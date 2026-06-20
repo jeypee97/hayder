@@ -60,14 +60,14 @@ if (Auth::user()->dashboard_style == "light") {
                             <div class="pair-chart-toolbar">
                                 <div class="chart-type-switch">
                                     <button type="button" class="chart-type-btn active" data-chart-mode="line">Line</button>
-                                    {{-- <button type="button" class="chart-type-btn" data-chart-mode="candles">Candlestick</button> --}}
+                                       <button type="button" class="chart-type-btn" data-chart-mode="candles">Candlestick</button>
                                 </div>
                                 <div class="chart-trend-badge" id="chart-trend-badge">Trend: Up</div>
                             </div>
                             <div class="pair-chart-canvas" id="pair-chart-canvas">
                                 <svg id="pair-chart-svg" viewBox="0 0 100 48" preserveAspectRatio="none" aria-label="Pair trend chart"></svg>
                             </div>
-                            {{-- <p class="chart-footnote">Illustrative movement only. Chart does not represent live market prices.</p> --}}
+                               <p class="chart-footnote">Illustrative movement only. Chart does not represent live market prices.</p>
                         </div>
 
                         <!-- Investment Form -->
@@ -1113,7 +1113,7 @@ if (Auth::user()->dashboard_style == "light") {
 
             const normalize = value => (value - min) / spread;
             const stepX = candles.length > 0 ? 100 / candles.length : 100;
-            const bodyWidth = Math.max(stepX * 0.58, 0.8);
+               const bodyWidth = Math.max(stepX * 0.58, 0.8);
 
             let svg = '';
 
@@ -1124,12 +1124,15 @@ if (Auth::user()->dashboard_style == "light") {
                 const highY = toChartY(normalize(candle.h));
                 const lowY = toChartY(normalize(candle.l));
                 const bodyTop = Math.min(openY, closeY);
-                const bodyHeight = Math.max(Math.abs(openY - closeY), 0.8);
+                   const bodyHeight = Math.max(Math.abs(openY - closeY), 0.6);
+                   const wickHeight = Math.max(Math.abs(highY - lowY), bodyHeight + 0.6);
+                   const bodyWidth = clamp(stepX * (0.24 + ((bodyHeight / 40) * 1.02)), 0.75, stepX * 0.9);
+                   const wickWidth = clamp(0.22 + (wickHeight / 44), 0.2, 1.0);
                 const rising = candle.c >= candle.o;
                 const bodyColor = rising ? '#10b981' : '#ef4444';
 
                 svg += `
-                    <line x1="${xCenter.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${xCenter.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${bodyColor}" stroke-width="0.35"></line>
+                       <line x1="${xCenter.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${xCenter.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${bodyColor}" stroke-width="${wickWidth.toFixed(3)}" stroke-linecap="round"></line>
                     <rect x="${(xCenter - (bodyWidth / 2)).toFixed(3)}" y="${bodyTop.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${bodyHeight.toFixed(3)}" fill="${bodyColor}" opacity="0.8" rx="0.2"></rect>
                 `;
             });

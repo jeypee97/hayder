@@ -65,7 +65,7 @@ if (Auth::user()->dashboard_style == "light") {
                         </div>
                         <div class="chart-mode-switch" id="chartModeSwitch">
                             <button type="button" class="chart-mode-btn active" data-mode="line">Line</button>
-                            {{-- <button type="button" class="chart-mode-btn" data-mode="candles">Candlestick</button> --}}
+                            <button type="button" class="chart-mode-btn" data-mode="candles">Candlestick</button>
                         </div>
                     </div>
 
@@ -823,7 +823,6 @@ if (Auth::user()->dashboard_style == "light") {
             const scale = value => (value - min) / spread;
 
             const step = 100 / candles.length;
-            const bodyWidth = Math.max(step * 0.58, 0.9);
             let html = '';
 
             candles.forEach((candle, index) => {
@@ -833,13 +832,16 @@ if (Auth::user()->dashboard_style == "light") {
                 const highY = toY(scale(candle.h));
                 const lowY = toY(scale(candle.l));
                 const top = Math.min(openY, closeY);
-                const height = Math.max(Math.abs(openY - closeY), 0.8);
+                const bodyHeight = Math.max(Math.abs(openY - closeY), 0.6);
+                const wickHeight = Math.max(Math.abs(highY - lowY), bodyHeight + 0.6);
+                const bodyWidth = clamp(step * (0.24 + ((bodyHeight / 34) * 0.96)), 0.75, step * 0.9);
+                const wickWidth = clamp(0.22 + (wickHeight / 42), 0.2, 1.0);
                 const rising = candle.c >= candle.o;
                 const color = rising ? '#10b981' : '#ef4444';
 
                 html += `
-                    <line x1="${x.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${x.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${color}" stroke-width="0.35"></line>
-                    <rect x="${(x - bodyWidth / 2).toFixed(3)}" y="${top.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${height.toFixed(3)}" fill="${color}" opacity="0.84" rx="0.2"></rect>
+                    <line x1="${x.toFixed(3)}" y1="${highY.toFixed(3)}" x2="${x.toFixed(3)}" y2="${lowY.toFixed(3)}" stroke="${color}" stroke-width="${wickWidth.toFixed(3)}" stroke-linecap="round"></line>
+                    <rect x="${(x - bodyWidth / 2).toFixed(3)}" y="${top.toFixed(3)}" width="${bodyWidth.toFixed(3)}" height="${bodyHeight.toFixed(3)}" fill="${color}" opacity="0.88" rx="0.22"></rect>
                 `;
             });
 

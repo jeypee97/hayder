@@ -325,10 +325,11 @@ class TradingPairsController extends Controller
             $open = $currentValue;
             $delta = $this->syntheticPairDelta($seed, $index);
             $close = max(1, $open + $delta);
-            $wickSize = $this->syntheticWickSize($seed, $index);
+            $upperWick = $this->syntheticWickSize($seed, $index, 1.0);
+            $lowerWick = $this->syntheticWickSize($seed + 31, $index, 0.82);
 
-            $high = max($open, $close) + $wickSize;
-            $low = max(1, min($open, $close) - $wickSize);
+            $high = max($open, $close) + $upperWick;
+            $low = max(1, min($open, $close) - $lowerWick);
 
             $line[] = [
                 't' => $step * $intervalSeconds,
@@ -366,17 +367,21 @@ class TradingPairsController extends Controller
         $bullishBias = 0.55 + (($seed % 21) / 100);
         $roll = $this->syntheticRoll($seed, $step);
         $direction = $roll < $bullishBias ? 1 : -1;
-        $magnitude = 0.12 + ($this->syntheticRoll($seed + 97, $step) * 0.38);
-        $trendCarry = sin(($step + ($seed % 17)) * 0.08) * 0.11;
-        $wave = sin(($step + ($seed % 29)) * 0.18) * 0.07;
-        $microPullback = cos(($step + ($seed % 41)) * 0.11) * 0.04;
+        $magnitude = 0.12 + ($this->syntheticRoll($seed + 97, $step) * 0.42);
+        $trendCarry = sin(($step + ($seed % 17)) * 0.08) * 0.13;
+        $wave = sin(($step + ($seed % 29)) * 0.18) * 0.09;
+        $microPullback = cos(($step + ($seed % 41)) * 0.11) * 0.05;
+        $rangePulse = sin(($step + ($seed % 13)) * 0.31) * 0.06;
 
-        return ($direction * $magnitude) + $trendCarry + $wave + $microPullback;
+        return ($direction * $magnitude) + $trendCarry + $wave + $microPullback + $rangePulse;
     }
 
-    private function syntheticWickSize(int $seed, int $step): float
+    private function syntheticWickSize(int $seed, int $step, float $scale = 1.0): float
     {
-        return abs(sin(($step + ($seed % 53)) * 0.18)) * 0.45 + 0.12;
+        $base = abs(sin(($step + ($seed % 53)) * 0.18)) * 0.45 + 0.12;
+        $variance = 0.7 + ($this->syntheticRoll($seed + 211, $step) * 0.8);
+
+        return $base * $variance * $scale;
     }
 
     private function syntheticRoll(int $seed, int $step): float
