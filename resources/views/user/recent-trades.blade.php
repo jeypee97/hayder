@@ -449,6 +449,8 @@ if (Auth::user()->dashboard_style == "light") {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             margin-bottom: 16px;
         }
 
@@ -456,6 +458,11 @@ if (Auth::user()->dashboard_style == "light") {
             display: flex;
             align-items: center;
             gap: 14px;
+            min-width: 0;
+        }
+
+        .trade-pair .pair-info {
+            min-width: 0;
         }
 
         .pair-icon {
@@ -504,6 +511,14 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         /* Status Badge */
+        .trade-status-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -512,6 +527,8 @@ if (Auth::user()->dashboard_style == "light") {
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
         }
 
         .status-badge.active {
@@ -525,7 +542,6 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         .status-badge.trend {
-            margin-left: 8px;
             background: rgba(16, 185, 129, 0.15);
             color: #10b981;
         }
@@ -581,6 +597,15 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         @media (max-width: 576px) {
+            .trade-main {
+                align-items: flex-start;
+            }
+
+            .trade-status-wrapper {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
             .trade-details {
                 grid-template-columns: 1fr;
                 gap: 12px;
