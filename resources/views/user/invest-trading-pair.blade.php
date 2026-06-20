@@ -67,7 +67,7 @@ if (Auth::user()->dashboard_style == "light") {
                             <div class="pair-chart-canvas" id="pair-chart-canvas">
                                 <svg id="pair-chart-svg" viewBox="0 0 100 48" preserveAspectRatio="none" aria-label="Pair trend chart"></svg>
                             </div>
-                               <p class="chart-footnote">Illustrative movement only. Chart does not represent live market prices.</p>
+                               
                         </div>
 
                         <!-- Investment Form -->
