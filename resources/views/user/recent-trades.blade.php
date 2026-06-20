@@ -1156,7 +1156,7 @@ if (Auth::user()->dashboard_style == "light") {
                 const diff = endTime - now;
 
                 if (diff <= 0) {
-                    el.textContent = 'Completed';
+                    el.textContent = '0.0.0';
                     el.classList.add('countdown-expired');
                     el.classList.remove('countdown-active');
                     return;

@@ -106,6 +106,11 @@ if (Auth::user()->dashboard_style == "light") {
                                     </span>
                                 </div>
 
+                                <div class="card-chart-switch" data-pair-switch>
+                                    <button type="button" class="card-chart-btn active" data-card-mode="line">Line</button>
+                                    <button type="button" class="card-chart-btn" data-card-mode="candles">Candle</button>
+                                </div>
+
                                 <div class="pair-chart" id="pair-chart-{{ $pair->id }}">
                                     <svg id="pair-chart-svg-{{ $pair->id }}" viewBox="0 0 100 38" preserveAspectRatio="none" aria-label="{{ $pair->base_symbol }} chart"></svg>
                                 </div>
@@ -364,6 +369,37 @@ if (Auth::user()->dashboard_style == "light") {
         }
 
         .chart-mode-btn.active {
+            background: rgba(99, 102, 241, 0.16);
+            color: #6366f1;
+        }
+
+        .card-chart-switch {
+            display: flex;
+            width: max-content;
+            margin-left: auto;
+            height: 28px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+
+        .card-chart-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .card-chart-btn.active {
             background: rgba(99, 102, 241, 0.16);
             color: #6366f1;
         }
@@ -1041,7 +1077,7 @@ if (Auth::user()->dashboard_style == "light") {
 
                 applyDirection(card, trend);
 
-                if (chartMode === 'candles') {
+                if (getCardMode(card) === 'candles') {
                     renderCandles(svg, candles);
                     attachChartInteractions(svg);
                     return;
@@ -1054,6 +1090,36 @@ if (Auth::user()->dashboard_style == "light") {
             }
         }
 
+        function getCardMode(card) {
+            return card.dataset.chartMode === 'candles' ? 'candles' : 'line';
+        }
+
+        function syncCardSwitch(card, mode) {
+            const switchEl = card.querySelector('[data-pair-switch]');
+            if (!switchEl) {
+                return;
+            }
+            switchEl.querySelectorAll('.card-chart-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.cardMode === mode);
+            });
+        }
+
+        pairCards.forEach(card => {
+            card.dataset.chartMode = chartMode;
+            const switchEl = card.querySelector('[data-pair-switch]');
+            if (!switchEl) {
+                return;
+            }
+            switchEl.querySelectorAll('.card-chart-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.dataset.cardMode === 'candles' ? 'candles' : 'line';
+                    card.dataset.chartMode = mode;
+                    syncCardSwitch(card, mode);
+                    refreshCardChart(card);
+                });
+            });
+        });
+
         function refreshAllCharts() {
             pairCards.forEach(card => {
                 refreshCardChart(card);
@@ -1065,6 +1131,10 @@ if (Auth::user()->dashboard_style == "light") {
                 chartModeButtons.forEach(item => item.classList.remove('active'));
                 button.classList.add('active');
                 chartMode = button.dataset.mode === 'candles' ? 'candles' : 'line';
+                pairCards.forEach(card => {
+                    card.dataset.chartMode = chartMode;
+                    syncCardSwitch(card, chartMode);
+                });
                 refreshAllCharts();
             });
         });
