@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('dashboard')->group(func
     Route::get('buy-plan', [ViewsController::class, 'mplans'])->name('mplans');
     Route::get('myplans', [ViewsController::class, 'myplans'])->name('myplans');
     Route::get('referuser', [ViewsController::class, 'referuser'])->name('referuser');
+    Route::get('referral-earnings', [ViewsController::class, 'referralEarnings'])->name('referral.earnings');
     Route::get('verify-account', [ViewsController::class, 'verifyaccount'])->name('account.verify');
     Route::get('manage-account-security', [ViewsController::class, 'twofa'])->name('twofa');
 

@@ -86,8 +86,8 @@ class Controller extends BaseController
           $deposit_amount = $amount;
           $array=User::all();
           $parent=$user->id;
-          $this->getAncestors($array, $deposit_amount, $parent);
-          
+          $this->getAncestors($array, $deposit_amount, $parent, 0, $user->id);
+
         }
         
          //send email notification
@@ -200,7 +200,7 @@ class Controller extends BaseController
     }
     
     //Get uplines
-function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
+function getAncestors($array, $deposit_amount, $parent = 0, $level = 0, $origin = null) {
   $referedMembers = '';
   $parent=User::where('id',$parent)->first();
   foreach ($array as $entry) {
@@ -221,6 +221,7 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
             //create history
              Tp_Transaction::create([
             'user' => $entry->id,
+            'from_user' => $origin,
             'plan' => "Credit",
              'amount'=>$earnings,
              'type'=>"Ref_bonus",
@@ -238,6 +239,7 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
             //create history
              Tp_Transaction::create([
             'user' => $entry->id,
+            'from_user' => $origin,
             'plan' => "Credit",
              'amount'=>$earnings,
              'type'=>"Ref_bonus",
@@ -255,6 +257,7 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
             //create history
              Tp_Transaction::create([
             'user' => $entry->id,
+            'from_user' => $origin,
             'plan' => "Credit",
              'amount'=>$earnings,
              'type'=>"Ref_bonus",
@@ -272,6 +275,7 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
             //create history
              Tp_Transaction::create([
             'user' => $entry->id,
+            'from_user' => $origin,
             'plan' => "Credit",
              'amount'=>$earnings,
              'type'=>"Ref_bonus",
@@ -289,6 +293,7 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
             //create history
              Tp_Transaction::create([
             'user' => $entry->id,
+            'from_user' => $origin,
             'plan' => "Credit",
              'amount'=>$earnings,
              'type'=>"Ref_bonus",
@@ -301,8 +306,8 @@ function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
           }
           
           //$referedMembers .= '- ' . $entry->name . '- Level: '. $level. '- Commission: '.$earnings.'<br/>';
-          $referedMembers .= $this->getAncestors($array, $deposit_amount, $entry->id, $level+1);
-      
+          $referedMembers .= $this->getAncestors($array, $deposit_amount, $entry->id, $level+1, $origin);
+
        }
   }
   return $referedMembers;

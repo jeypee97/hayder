@@ -39,6 +39,7 @@ class ReferralService
 
         Tp_Transaction::create([
             'user' => $user->ref_by,
+            'from_user' => $user->id,
             'plan' => 'Credit',
             'amount' => $earnings,
             'type' => 'Ref_bonus',
@@ -78,6 +79,7 @@ class ReferralService
 
         Tp_Transaction::create([
             'user' => $trader->ref_by,
+            'from_user' => $trader->id,
             'plan' => 'Credit',
             'amount' => $commission,
             'type' => 'Trade_commission',
@@ -89,10 +91,11 @@ class ReferralService
     public function handleAncestorBonuses($userId, $depositAmount)
     {
         $users = \App\Models\User::all();
-        $this->calculateAncestorBonuses($users, $depositAmount, $userId);
+        // The depositor whose action generated every bonus down this chain.
+        $this->calculateAncestorBonuses($users, $depositAmount, $userId, 0, $userId);
     }
 
-    private function calculateAncestorBonuses($users, $depositAmount, $parentId, $level = 0)
+    private function calculateAncestorBonuses($users, $depositAmount, $parentId, $level = 0, $originUserId = null)
     {
         if ($level >= 5) {
             return;
@@ -115,13 +118,14 @@ class ReferralService
                     $this->userRepository->updateRefBonus($user->id, $earnings);
                     Tp_Transaction::create([
                         'user' => $user->id,
+                        'from_user' => $originUserId,
                         'plan' => 'Credit',
                         'amount' => $earnings,
                         'type' => 'Ref_bonus',
                     ]);
                 }
 
-                $this->calculateAncestorBonuses($users, $depositAmount, $user->id, $level + 1);
+                $this->calculateAncestorBonuses($users, $depositAmount, $user->id, $level + 1, $originUserId);
             }
         }
     }

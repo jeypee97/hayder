@@ -310,6 +310,38 @@ class ViewsController extends Controller
         ]);
     }
 
+    // Referral Earnings Page — breaks down what the user has earned from referrals
+    public function referralEarnings()
+    {
+        $user = Auth::user();
+
+        // All bonus credits earned by this user, newest first.
+        $bonuses = Tp_Transaction::where('user', $user->id)
+            ->whereIn('type', ['Ref_bonus', 'Trade_commission'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Resolve the names of the downline users who generated each bonus.
+        $names = User::whereIn('id', $bonuses->pluck('from_user')->filter()->unique())
+            ->pluck('name', 'id');
+
+        $decorate = function ($txn) use ($names) {
+            $txn->source_name = $names[$txn->from_user] ?? null;
+            return $txn;
+        };
+
+        $referralBonuses = $bonuses->where('type', 'Ref_bonus')->map($decorate)->values();
+        $tradeBonuses    = $bonuses->where('type', 'Trade_commission')->map($decorate)->values();
+
+        return view('user.referral-earnings', [
+            'title'           => 'Referral Earnings',
+            'referralBonuses' => $referralBonuses,
+            'tradeBonuses'    => $tradeBonuses,
+            'referralTotal'   => $referralBonuses->sum(fn ($t) => (float) $t->amount),
+            'tradeTotal'      => $tradeBonuses->sum(fn ($t) => (float) $t->amount),
+        ]);
+    }
+
     public function verifyaccount()
     {
         return view('user.verify', [

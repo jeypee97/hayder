@@ -145,6 +145,16 @@
                     </a>
                 </li>
 
+                <!-- Referral Earnings -->
+                <li class="nav-item {{ request()->routeIs('referral.earnings') ? 'active' : '' }}">
+                    <a href="{{ url('dashboard/referral-earnings') }}" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fa fa-coins"></i>
+                        </div>
+                        <span class="nav-text">Referral Earnings</span>
+                    </a>
+                </li>
+
                 <!-- Support -->
                 <li class="nav-item {{ request()->routeIs('support') ? 'active' : '' }}">
                     <a href="{{ url('dashboard/support') }}" class="nav-link">

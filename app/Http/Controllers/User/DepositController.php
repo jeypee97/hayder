@@ -151,10 +151,11 @@ class DepositController extends Controller
             $deposit_amount = $request->amount;
             $array=User::all();
             $parent=$user->id;
-            $this->getAncestors($array, $deposit_amount, $parent);
+            $this->getAncestors($array, $deposit_amount, $parent, 0, $user->id);
 
             Tp_Transaction::create([
                 'user' => $user->ref_by,
+                'from_user' => $user->id,
                 'plan' => "Credit",
                 'amount'=>$earnings,
                 'type'=>"Ref_bonus",
@@ -298,7 +299,7 @@ class DepositController extends Controller
     }
 
     //Get uplines
-    function getAncestors($array, $deposit_amount, $parent = 0, $level = 0) {
+    function getAncestors($array, $deposit_amount, $parent = 0, $level = 0, $origin = null) {
         $referedMembers = '';
         $parent=User::where('id',$parent)->first();
 
@@ -319,6 +320,7 @@ class DepositController extends Controller
                     //create history
                     Tp_Transaction::create([
                         'user' => $entry->id,
+                        'from_user' => $origin,
                         'plan' => "Credit",
                         'amount'=>$earnings,
                         'type'=>"Ref_bonus",
@@ -336,6 +338,7 @@ class DepositController extends Controller
                     //create history
                     Tp_Transaction::create([
                         'user' => $entry->id,
+                        'from_user' => $origin,
                         'plan' => "Credit",
                         'amount'=>$earnings,
                         'type'=>"Ref_bonus",
@@ -353,6 +356,7 @@ class DepositController extends Controller
                     //create history
                     Tp_Transaction::create([
                         'user' => $entry->id,
+                        'from_user' => $origin,
                         'plan' => "Credit",
                         'amount'=>$earnings,
                         'type'=>"Ref_bonus",
@@ -370,6 +374,7 @@ class DepositController extends Controller
                     //create history
                     Tp_Transaction::create([
                         'user' => $entry->id,
+                        'from_user' => $origin,
                         'plan' => "Credit",
                         'amount'=>$earnings,
                         'type'=>"Ref_bonus",
@@ -387,6 +392,7 @@ class DepositController extends Controller
                     //create history
                     Tp_Transaction::create([
                         'user' => $entry->id,
+                        'from_user' => $origin,
                         'plan' => "Credit",
                         'amount'=>$earnings,
                         'type'=>"Ref_bonus",
@@ -399,7 +405,7 @@ class DepositController extends Controller
                 }
 
                 //$referedMembers .= '- ' . $entry->name . '- Level: '. $level. '- Commission: '.$earnings.'<br/>';
-                $referedMembers .= $this->getAncestors($array, $deposit_amount, $entry->id, $level+1);
+                $referedMembers .= $this->getAncestors($array, $deposit_amount, $entry->id, $level+1, $origin);
 
             }
         }
