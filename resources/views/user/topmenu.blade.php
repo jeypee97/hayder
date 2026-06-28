@@ -14,8 +14,8 @@ if (Auth::user()->dashboard_style == "light") {
     <!-- Logo Header -->
     <div class="logo-header" data-background-color="{{ $bgmenu }}">
 
-        <!-- Burger Menu Button -->
-        <button class="burger-menu-btn sidenav-toggler" type="button" data-toggle="collapse" data-target="collapse" aria-expanded="false" aria-label="Toggle navigation">
+        <!-- Burger Menu Button (mobile: open sidebar, desktop: collapse sidebar) -->
+        <button class="burger-menu-btn sidenav-toggler toggle-sidebar" type="button" aria-expanded="false" aria-label="Toggle navigation">
             <div class="burger-icon">
                 <span></span>
                 <span></span>
@@ -26,18 +26,6 @@ if (Auth::user()->dashboard_style == "light") {
         <a href="/dashboard" class="logo">
             <span class="logo-text">{{ $settings->site_name }}</span>
         </a>
-
-        <button class="topbar-toggler more d-lg-none"><i class="icon-options-vertical"></i></button>
-
-        <div class="nav-toggle d-none d-lg-block">
-            <button class="btn btn-toggle toggle-sidebar burger-menu-btn">
-                <div class="burger-icon">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </button>
-        </div>
     </div>
     <!-- End Logo Header -->
 
@@ -299,17 +287,6 @@ if (Auth::user()->dashboard_style == "light") {
 
     .header-redesign .logo-text::first-letter {
         color: #6366f1;
-    }
-
-    /* Nav Toggle (Desktop) */
-    .header-redesign .nav-toggle {
-        margin-left: auto;
-    }
-
-    .header-redesign .nav-toggle .btn-toggle {
-        background: transparent;
-        border: none;
-        padding: 0;
     }
 
     /* Header Action Buttons */
@@ -675,37 +652,10 @@ if (Auth::user()->dashboard_style == "light") {
         color: #ef4444;
     }
 
-    /* Topbar toggler (mobile more options) */
-    .header-redesign .topbar-toggler {
-        background: transparent;
-        border: none;
-        color: var(--text-secondary);
-        padding: 8px;
-        margin-left: auto;
-    }
-
     /* Responsive */
     @media (max-width: 991px) {
         .header-redesign .logo-header {
             justify-content: flex-start;
-        }
-
-        .header-redesign .burger-menu-btn.sidenav-toggler {
-            display: flex !important;
-        }
-
-        .header-redesign .nav-toggle {
-            display: none !important;
-        }
-    }
-
-    @media (min-width: 992px) {
-        .header-redesign .burger-menu-btn.sidenav-toggler {
-            display: none;
-        }
-
-        .header-redesign .nav-toggle {
-            display: block !important;
         }
     }
 
