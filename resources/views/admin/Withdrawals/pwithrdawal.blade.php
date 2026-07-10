@@ -35,6 +35,10 @@
         .pwithdrawal-page .card .text-success {
             color: #198754 !important;
         }
+
+        .textba {
+            color: black !important;
+        }
     </style>
     @include('admin.topmenu')
     @include('admin.sidebar')
@@ -75,24 +79,24 @@
 
                         {{-- Wallet Details --}}
                         <div class="mb-3 form-group">
-                            <h5 class="text-{{$text}}">Wallet Address</h5>
+                            <h5 class="text-{{$text}} textba">Wallet Address</h5>
                             <input type="text" class="form-control text-{{$text}} bg-{{$bg}}" value="{{$withdrawal->wallet_address}}" readonly>
                         </div>
 
                         <div class="mb-3 form-group">
-                            <h5 class="text-{{$text}}">Network</h5>
+                            <h5 class="text-{{$text}} textba">Network</h5>
                             <input type="text" class="form-control text-{{$text}} bg-{{$bg}}" value="{{$withdrawal->network}}" readonly>
                         </div>
 
                         @if(!empty($withdrawal->notes))
                         <div class="mb-3 form-group">
-                            <h5 class="text-{{$text}}">User Notes</h5>
+                            <h5 class="text-{{$text}} textba">User Notes</h5>
                             <textarea class="form-control text-{{$text}} bg-{{$bg}}" rows="3" readonly>{{$withdrawal->notes}}</textarea>
                         </div>
                         @endif
 
                         <div class="mb-3 form-group">
-                            <h5 class="text-{{$text}}">Amount</h5>
+                            <h5 class="text-{{$text}} textba">Amount</h5>
                             <input type="text" class="form-control text-{{$text}} bg-{{$bg}}" value="{{$settings->currency}}{{number_format($withdrawal->amount, 2)}}" readonly>
                         </div>
 
