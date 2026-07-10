@@ -20,6 +20,21 @@
         .pwithdrawal-page .form-control::placeholder {
             color: #6c757d !important;
         }
+
+        /* Make the details card a light panel with dark, readable headings/labels,
+           so the wallet/network/amount section is clearly visible in dark mode. */
+        .pwithdrawal-page .card {
+            background: #ffffff !important;
+        }
+        .pwithdrawal-page .card h4,
+        .pwithdrawal-page .card h5,
+        .pwithdrawal-page .card h6,
+        .pwithdrawal-page .card label {
+            color: #212529 !important;
+        }
+        .pwithdrawal-page .card .text-success {
+            color: #198754 !important;
+        }
     </style>
     @include('admin.topmenu')
     @include('admin.sidebar')
