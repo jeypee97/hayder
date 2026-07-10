@@ -78,10 +78,10 @@
                         </div>
 
                         {{-- Wallet Details --}}
-                        <div class="mb-3 form-group">
+                        {{-- <div class="mb-3 form-group">
                             <h5 class="text-{{$text}} textba">Wallet Address</h5>
                             <input type="text" class="form-control text-{{$text}} bg-{{$bg}}" value="{{$withdrawal->wallet_address}}" readonly>
-                        </div>
+                        </div> --}}
 
                         <div class="mb-3 form-group">
                             <h5 class="text-{{$text}} textba">Network</h5>
