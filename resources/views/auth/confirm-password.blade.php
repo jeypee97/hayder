@@ -16,7 +16,7 @@
             --bg-card: rgba(18, 18, 26, 0.95);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
-            --text-muted: #64748b;
+            --text-muted: #7d8ba3;
             --border-color: rgba(99, 102, 241, 0.15);
             --input-bg: #12121a;
         }

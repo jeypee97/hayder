@@ -63,7 +63,7 @@ if (Auth::check() && Auth::user()->dashboard_style == "light") {
 			--bg-card: rgba(18, 18, 26, 0.95);
 			--text-primary: #f8fafc;
 			--text-secondary: #94a3b8;
-			--text-muted: #64748b;
+			--text-muted: #7d8ba3;
 			--border-color: rgba(99, 102, 241, 0.15);
 			--input-bg: #12121a;
 			--hover-bg: rgba(99, 102, 241, 0.08);
@@ -443,19 +443,19 @@ if (Auth::check() && Auth::user()->dashboard_style == "light") {
 			background: var(--bg-card) !important;
 		}
 
-		/* Sidebar override */
-		.sidebar {
+		/* Sidebar override (legacy sidebar only; the redesigned sidebar styles itself) */
+		.sidebar:not(.sidebar-redesign) {
 			background: var(--bg-secondary) !important;
 			border-right: 1px solid var(--border-color) !important;
 		}
 
-		.sidebar .nav > .nav-item a {
+		.sidebar:not(.sidebar-redesign) .nav > .nav-item a {
 			color: var(--text-secondary) !important;
 		}
 
-		.sidebar .nav > .nav-item a:hover,
-		.sidebar .nav > .nav-item a:focus,
-		.sidebar .nav > .nav-item.active > a {
+		.sidebar:not(.sidebar-redesign) .nav > .nav-item a:hover,
+		.sidebar:not(.sidebar-redesign) .nav > .nav-item a:focus,
+		.sidebar:not(.sidebar-redesign) .nav > .nav-item.active > a {
 			color: var(--primary) !important;
 			background: var(--hover-bg) !important;
 		}

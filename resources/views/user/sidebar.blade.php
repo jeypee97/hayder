@@ -210,15 +210,15 @@
         --sidebar-border: rgba(99, 102, 241, 0.1);
         --text-primary: #f8fafc;
         --text-secondary: #94a3b8;
-        --text-muted: #64748b;
+        --text-muted: #7d8ba3;
         --icon-bg: rgba(99, 102, 241, 0.1);
-        --section-color: #475569;
+        --section-color: #64748b;
         --avatar-bg: linear-gradient(135deg, #6366f1, #818cf8);
     }
 
     /* Light theme variables */
     .sidebar-redesign[data-background-color="light"] {
-        --sidebar-bg: #ffffff;
+        --sidebar-bg: transparent;
         --sidebar-border: #e2e8f0;
         --text-primary: #0f172a;
         --text-secondary: #64748b;
@@ -377,7 +377,7 @@
     }
 
     .sidebar-redesign .nav-link.sidebar-logout:hover .nav-icon {
-        background: rgba(255, 255, 255, 0.2);
+        /* background: rgba(255, 255, 255, 0.2); */
     }
 
     .sidebar-redesign .nav-link.sidebar-logout:hover .nav-icon i {
@@ -385,7 +385,7 @@
     }
 
     .sidebar-redesign .nav-link:hover .nav-icon {
-        background: rgba(255, 255, 255, 0.2);
+        /* background: rgba(255, 255, 255, 0.2); */
     }
 
     .sidebar-redesign .nav-link:hover .nav-icon i {
@@ -398,13 +398,12 @@
 
     /* Active State - Solid Indigo */
     .sidebar-redesign .nav-item.active > .nav-link {
-        background: #6366f1;
         color: white;
         box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.5);
     }
 
     .sidebar-redesign .nav-item.active > .nav-link .nav-icon {
-        background: rgba(255, 255, 255, 0.2);
+        /* background: rgba(255, 255, 255, 0.2); */
     }
 
     .sidebar-redesign .nav-item.active > .nav-link .nav-icon i {
@@ -413,6 +412,30 @@
 
     .sidebar-redesign .nav-item.active > .nav-link .nav-arrow {
         color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Override legacy Atlantis theme. atlantis.min.css forces the active item to a
+       WHITE background (background:#fff !important, specificity 0,6,1), which hid the
+       redesign's indigo pill and left white-on-white text. Re-assert the indigo
+       active/hover pill with a higher-specificity !important selector (0,7,1). */
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item > a.nav-link:hover {
+        background: #6366f1 !important;
+        box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.5) !important;
+    }
+
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link .nav-text,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link p,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link span,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item > a.nav-link:hover,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item > a.nav-link:hover .nav-text {
+        color: #fff !important;
+    }
+
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item.active > a.nav-link .nav-icon i,
+    .sidebar-redesign.sidebar .nav.nav-primary > .nav-item > a.nav-link:hover .nav-icon i {
+        color: #fff !important;
     }
 
     .sidebar-redesign .nav-icon {

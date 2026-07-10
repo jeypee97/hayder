@@ -179,7 +179,7 @@ if (Auth::user()->dashboard_style == "light") {
         --header-border: rgba(99, 102, 241, 0.1);
         --text-primary: #f8fafc;
         --text-secondary: #94a3b8;
-        --text-muted: #64748b;
+        --text-muted: #7d8ba3;
         --hover-bg: rgba(99, 102, 241, 0.1);
         --dropdown-bg: #12121a;
         --dropdown-border: rgba(99, 102, 241, 0.15);
