@@ -1,9 +1,29 @@
 {{--  --}}
 @extends('layouts.app')
 @section('content')
+    <style>
+        /* Make the text inside the form boxes black on a white field, overriding
+           the global dark-theme .form-control rules (which use !important). */
+        .pwithdrawal-page .form-control,
+        .pwithdrawal-page input.form-control,
+        .pwithdrawal-page select.form-control,
+        .pwithdrawal-page textarea.form-control {
+            color: #000 !important;
+            background: #fff !important;
+            border: 1px solid #ced4da !important;
+        }
+        .pwithdrawal-page .form-control:focus {
+            color: #000 !important;
+            background: #fff !important;
+            border-color: #6366f1 !important;
+        }
+        .pwithdrawal-page .form-control::placeholder {
+            color: #6c757d !important;
+        }
+    </style>
     @include('admin.topmenu')
     @include('admin.sidebar')
-    <div class="main-panel bg-{{$bg}}">
+    <div class="main-panel bg-{{$bg}} pwithdrawal-page">
         <div class="content bg-{{$bg}}">
             <div class="page-inner">
                 <div class="mt-2 mb-5">
