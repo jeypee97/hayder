@@ -129,6 +129,7 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
     Route::post('dashboard/edituser', [ManageUsersController::class , 'edituser'])->name('edituser');
     Route::get('dashboard/getusers/{num}/{item}/{order}', [ManageUsersController::class , 'getusers'])->name('getusers');
     Route::get('dashboard/resetpswd/{id}', [ManageUsersController::class , 'resetpswd'])->name('resetpswd');
+    Route::post('dashboard/set-user-password', [ManageUsersController::class , 'setUserPassword'])->name('setuserpassword');
     Route::get('dashboard/login-activity/{id}', [ManageUsersController::class , 'loginactivity'])->name('loginactivity');
     Route::get('dashboard/clear-activity/{id}', [ManageUsersController::class , 'clearactivity'])->name('clearactivity');
 

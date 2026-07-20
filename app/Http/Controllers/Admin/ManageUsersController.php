@@ -438,13 +438,37 @@ class ManageUsersController extends Controller
         return redirect()->back()->with('success', 'Action Successful!');
     }
 
-    //Reset Password
+    //Reset Password to the default value (Super Admin only)
     public function resetpswd($id){
-        User::where('id', $id)
-        ->update([
+        if (Auth('admin')->user()->type !== 'Super Admin') {
+            abort(403, 'Only a Super Admin can reset a user password.');
+        }
+
+        $user = User::findOrFail($id);
+        $user->update([
             'password' => Hash::make('user01236'),
         ]);
+
         return redirect()->back()->with('success', 'Password has been reset to default');
+    }
+
+    //Set a specific new password for a user (Super Admin only)
+    public function setUserPassword(Request $request){
+        if (Auth('admin')->user()->type !== 'Super Admin') {
+            abort(403, 'Only a Super Admin can reset a user password.');
+        }
+
+        $request->validate([
+            'user_id'  => 'required|exists:users,id',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()->back()->with('success', 'Password updated for ' . $user->name);
     }
 
     //Clear user Account

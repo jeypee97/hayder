@@ -56,7 +56,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 @if (Auth('admin')->User()->type == "Super Admin")
 
                                                 <a href="#"  data-toggle="modal" data-target="#topupModal" class="dropdown-item">Credit/Debit</a>
-                                                {{-- <a href="#" data-toggle="modal" data-target="#resetpswdModal"  class="dropdown-item">Reset Password</a> --}}
+                                                <a href="#" data-toggle="modal" data-target="#resetpswdModal"  class="dropdown-item">Reset Password</a>
                                                 <a href="#" data-toggle="modal" data-target="#clearacctModal" class="dropdown-item">Clear Account</a>
 
 

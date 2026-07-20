@@ -181,8 +181,32 @@
                     <button type="button" class="close text-{{$text}}" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body bg-{{$bg}}">
-                    <p class="text-{{$text}}">Are you sure you want to reset password for {{$user->name}} to <span class="text-primary font-weight-bolder">user01236</span></p>
-                    <a class="btn btn-{{$text}}" href="{{ url('admin/dashboard/resetpswd') }}/{{$user->id}}">Reset Now</a>
+                    @if (Auth('admin')->User()->type == "Super Admin")
+                        <p class="text-{{$text}}">Set a new password for <strong>{{$user->name}}</strong> ({{$user->email}}).</p>
+                        <form method="post" action="{{ route('setuserpassword') }}">
+                            @csrf
+                            <input type="hidden" name="user_id" value="{{$user->id}}">
+                            <div class="form-group">
+                                <label class="text-{{$text}}">New Password</label>
+                                <input type="password" name="password" class="form-control bg-{{$bg}} text-{{$text}}"
+                                       placeholder="At least 8 characters" minlength="8" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="text-{{$text}}">Confirm New Password</label>
+                                <input type="password" name="password_confirmation" class="form-control bg-{{$bg}} text-{{$text}}"
+                                       placeholder="Re-enter the password" minlength="8" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+
+                        <hr>
+                        <p class="text-{{$text}} mb-1">Or reset to the default password
+                            <span class="text-primary font-weight-bolder">user01236</span>:</p>
+                        <a class="btn btn-warning btn-sm" href="{{ url('admin/dashboard/resetpswd') }}/{{$user->id}}"
+                           onclick="return confirm('Reset {{$user->name}}\'s password to the default?');">Reset to Default</a>
+                    @else
+                        <p class="text-{{$text}} mb-0">Only a Super Admin can reset a user's password.</p>
+                    @endif
                 </div>
             </div>
         </div>
