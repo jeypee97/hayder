@@ -1,5 +1,13 @@
 <?php
-if (Auth::check() && Auth::user()->dashboard_style == "light") {
+// Resolve the active account from whichever guard is logged in. Admins use the
+// 'admin' guard and end users the default web guard; keying the theme off only
+// the web guard meant admin pages never picked up the admin's saved preference,
+// so light and dark looked almost identical (only the sidebar tint changed).
+$themeUser = Auth::guard('admin')->check()
+	? Auth::guard('admin')->user()
+	: (Auth::check() ? Auth::user() : null);
+
+if (($themeUser->dashboard_style ?? null) === "light") {
 	$text = "dark";
 	$bg = "light";
 	$theme = "light";
