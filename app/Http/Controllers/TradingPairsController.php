@@ -513,6 +513,38 @@ class TradingPairsController extends Controller
         return view('admin.trade-earnings', compact('earners', 'platformTotal', 'earnersCount', 'settings'));
     }
 
+    /**
+     * Platform-wide trade history: every trade from every user, all statuses,
+     * newest first. Visible to both Admin and Super Admin. Supports an optional
+     * ?status= filter and a ?search= (user name/email) filter.
+     */
+    public function allUsersTrades(Request $request)
+    {
+        $settings = Settings::first() ?? new Settings(['currency' => 'USD']);
+
+        $status = $request->query('status');
+        $search = trim((string) $request->query('search'));
+
+        $investments = Investment::with(['user', 'tradingPair'])
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
+            })
+            ->when($search !== '', function ($q) use ($search) {
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        // Distinct statuses actually present, for the filter dropdown.
+        $statuses = Investment::query()->distinct()->orderBy('status')->pluck('status');
+
+        return view('admin.trades-history', compact('investments', 'settings', 'statuses', 'status', 'search'));
+    }
+
     public function viewUserTrades(User $user)
     {
         $investments = Investment::with(['tradingPair'])

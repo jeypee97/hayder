@@ -46,6 +46,13 @@
                     </a>
                 </li>
 
+                <li class="nav-item {{ (request()->routeIs('admin.trades-history')) ? 'active' : '' }}">
+                    <a href="{{ route('admin.trades-history') }}">
+                        <i class="fa fa-history" aria-hidden="true"></i>
+                        <p>All Trade History</p>
+                    </a>
+                </li>
+
 
                 <li class="nav-item {{ (request()->routeIs('mdeposits')) ? 'active' : '' }} {{ (request()->routeIs('mwithdrawals')) ? 'active' : '' }} {{ (request()->routeIs('mdeposits')) ? 'active' : '' }} {{(request()->routeIs('viewdepositimage')) ? 'active' : '' }} {{ (request()->routeIs('processwithdraw')) ? 'active' : '' }}">
                     <a data-toggle="collapse" href="#mdw">

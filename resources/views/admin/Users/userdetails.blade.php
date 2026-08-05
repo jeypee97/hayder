@@ -31,10 +31,11 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                               Actions
                                             </button>
                                             <div class="dropdown-menu dropdown-menu-lg-right">
-                                                @if (Auth('admin')->User()->type == "Super Admin")
+                                                @if (Auth('admin')->User()->type == "Super Admin" || Auth('admin')->User()->type == "Admin")
                                                     <a class="dropdown-item" href="{{ route('admin.user-trades', $user->id) }}">View Trades</a>
+                                                @endif
+                                                @if (Auth('admin')->User()->type == "Super Admin")
                                                     <a class="dropdown-item" href="{{ route('admin.user-referrals', $user->id) }}">Manage Referrals</a>
-
                                                 @endif
                                                 <a class="dropdown-item" href="{{ route('loginactivity', $user->id) }}">Login Activity</a>
                                                 @if($user->status==NULL || $user->status=='blocked')

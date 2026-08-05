@@ -70,6 +70,7 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
 
     // Route::group(['middleware' => ['auth:admin']], function () {
     Route::get('/trade-earnings', [TradingPairsController::class, 'tradeEarnings'])->name('admin.trade-earnings');
+    Route::get('/trades-history', [TradingPairsController::class, 'allUsersTrades'])->name('admin.trades-history');
     Route::get('/user-trades/{user}', [TradingPairsController::class, 'viewUserTrades'])->name('admin.user-trades');
     Route::get('/user-referrals/{user}', [ReferralsController::class, 'getReferrals'])->name('admin.user-referrals');
 
