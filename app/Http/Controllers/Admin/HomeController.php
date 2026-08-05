@@ -113,9 +113,17 @@ class HomeController extends Controller
     //Return manage users route
     public function manageusers()
     {
+      $countries = DB::table('users')
+        ->whereNotNull('country')
+        ->where('country', '!=', '')
+        ->distinct()
+        ->orderBy('country')
+        ->pluck('country');
+
       return view('admin.Users.users')
         ->with(array(
         'title'=>'All users',
+        'countries'=>$countries,
 
         ));
     }

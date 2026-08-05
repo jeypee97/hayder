@@ -86,11 +86,60 @@ class ManageUsersController extends Controller
         $settings = Settings::where('id', 1)->first();
         $searchItem = $sitem . '%';
 
-        // Build the query
+        // Build the query. Group the name/email OR so the additional filters
+        // below apply with AND (otherwise the OR would swallow them).
         $query = DB::table('users')
-            ->where('name', 'like', $searchItem)
-            ->orWhere('email', 'like', $searchItem)
-            ->orderBy('id', $order);
+            ->where(function ($q) use ($searchItem) {
+                $q->where('name', 'like', $searchItem)
+                  ->orWhere('email', 'like', $searchItem);
+            });
+
+        // Status filter: active vs blocked (blocked = anything that isn't active,
+        // including NULL, to match how the UI treats blocked users).
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('status', 'active');
+            } elseif ($request->status === 'blocked') {
+                $query->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', '!=', 'active');
+                });
+            }
+        }
+
+        // KYC / account verification filter.
+        if ($request->filled('verified')) {
+            if ($request->verified === '1') {
+                $query->whereNotNull('account_verify')->where('account_verify', '!=', '');
+            } elseif ($request->verified === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('account_verify')->orWhere('account_verify', '');
+                });
+            }
+        }
+
+        // Email verification filter.
+        if ($request->filled('email_verified')) {
+            if ($request->email_verified === '1') {
+                $query->whereNotNull('email_verified_at');
+            } elseif ($request->email_verified === '0') {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
+        // Country filter.
+        if ($request->filled('country')) {
+            $query->where('country', $request->country);
+        }
+
+        // Date-registered range filter.
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
+        $query->orderBy('id', $order);
 
         // Get paginated results
         $users = $query->paginate($num);

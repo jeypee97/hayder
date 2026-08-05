@@ -115,10 +115,58 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                             <option value="asc">Oldest First</option>
                                         </select>
                                     </div>
-                                    <div class="mb-2 mb-sm-0">
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
                                         <label class="text-{{$text}} mr-2">Search:</label>
                                         <input type="text" id="searchitem" placeholder="Search by name or email" class="form-control form-control-sm bg-{{$bg}} text-{{$text}}">
                                         <small id="errorsearch"></small>
+                                    </div>
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">Status:</label>
+                                        <select class="form-control form-control-sm bg-{{$bg}} text-{{$text}}" id="statusfilter">
+                                            <option value="">All</option>
+                                            <option value="active">Active</option>
+                                            <option value="blocked">Blocked</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">KYC:</label>
+                                        <select class="form-control form-control-sm bg-{{$bg}} text-{{$text}}" id="verifiedfilter">
+                                            <option value="">All</option>
+                                            <option value="1">Verified</option>
+                                            <option value="0">Not verified</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">Email:</label>
+                                        <select class="form-control form-control-sm bg-{{$bg}} text-{{$text}}" id="emailverifiedfilter">
+                                            <option value="">All</option>
+                                            <option value="1">Verified</option>
+                                            <option value="0">Unverified</option>
+                                        </select>
+                                    </div>
+                                    @if(isset($countries) && count($countries))
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">Country:</label>
+                                        <select class="form-control form-control-sm bg-{{$bg}} text-{{$text}}" id="countryfilter">
+                                            <option value="">All</option>
+                                            @foreach($countries as $c)
+                                                <option value="{{ $c }}">{{ $c }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @endif
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">From:</label>
+                                        <input type="date" id="fromdate" class="form-control form-control-sm bg-{{$bg}} text-{{$text}}">
+                                    </div>
+                                    <div class="mb-2 mb-sm-0 mr-sm-2">
+                                        <label class="text-{{$text}} mr-2">To:</label>
+                                        <input type="date" id="todate" class="form-control form-control-sm bg-{{$bg}} text-{{$text}}">
+                                    </div>
+                                    <div class="mb-2 mb-sm-0">
+                                        <button type="button" id="clearfilters" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Clear
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -207,7 +255,26 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                     searchvalue = searchvalue;
                 }
 
-                let url = "{{url('/admin/dashboard/getusers/')}}" + '/' + number + '/' + searchvalue + '/' + ordervalue + '?page=' + page;
+                // Additional filters (sent as query params).
+                let params = new URLSearchParams();
+                params.set('page', page);
+
+                let statusVal = (document.querySelector('#statusfilter') || {}).value || '';
+                let verifiedVal = (document.querySelector('#verifiedfilter') || {}).value || '';
+                let emailVal = (document.querySelector('#emailverifiedfilter') || {}).value || '';
+                let countryEl = document.querySelector('#countryfilter');
+                let countryVal = countryEl ? countryEl.value : '';
+                let fromVal = (document.querySelector('#fromdate') || {}).value || '';
+                let toVal = (document.querySelector('#todate') || {}).value || '';
+
+                if (statusVal) params.set('status', statusVal);
+                if (verifiedVal) params.set('verified', verifiedVal);
+                if (emailVal) params.set('email_verified', emailVal);
+                if (countryVal) params.set('country', countryVal);
+                if (fromVal) params.set('from', fromVal);
+                if (toVal) params.set('to', toVal);
+
+                let url = "{{url('/admin/dashboard/getusers/')}}" + '/' + number + '/' + searchvalue + '/' + ordervalue + '?' + params.toString();
 
                 // Show loading state
                 table.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
@@ -281,6 +348,30 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                 currentPage = 1;
                 getallusers(1);
             });
+
+            // Additional filter controls
+            ['statusfilter', 'verifiedfilter', 'emailverifiedfilter', 'countryfilter', 'fromdate', 'todate'].forEach(function(id) {
+                let el = document.querySelector('#' + id);
+                if (el) {
+                    el.addEventListener('change', function() {
+                        currentPage = 1;
+                        getallusers(1);
+                    });
+                }
+            });
+
+            let clearBtn = document.querySelector('#clearfilters');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    document.querySelector('#searchitem').value = '';
+                    ['statusfilter', 'verifiedfilter', 'emailverifiedfilter', 'countryfilter', 'fromdate', 'todate'].forEach(function(id) {
+                        let el = document.querySelector('#' + id);
+                        if (el) el.value = '';
+                    });
+                    currentPage = 1;
+                    getallusers(1);
+                });
+            }
 
             // Initial load
             getallusers();
