@@ -75,15 +75,15 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                             <div class="p-3 mt-4 border rounded row text-{{$text}}">
                                 <div class="col-md-3">
                                     <h5 class="text-bold">Account Balance</h5>
-                                    <p>{{$settings->currency}}{{number_format($user->account_bal)}}</p>
+                                    <p>{{$settings->currency}}{{number_format((float) str_replace(',', '', $user->account_bal ?? 0))}}</p>
                                 </div>
                                 <div class="col-md-3">
                                     <h5>Profit</h5>
-                                    <p>{{$settings->currency}}{{number_format($user->roi)}} </p>
+                                    <p>{{$settings->currency}}{{number_format((float) str_replace(',', '', $user->roi ?? 0))}} </p>
                                 </div>
                                 <div class="col-md-3">
                                     <h5>Referral Bonus</h5>
-                                    <p>{{$settings->currency}}{{number_format($user->ref_bonus)}}</p>
+                                    <p>{{$settings->currency}}{{number_format((float) str_replace(',', '', $user->ref_bonus ?? 0))}}</p>
                                 </div>
                                 <div class="col-md-3">
                                     <h5>Total Deposits</h5>
@@ -98,7 +98,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                 @endif
                                 <div class="col-md-3">
                                     <h5>Bonus</h5>
-                                    <p>{{$settings->currency}}{{number_format($user->bonus)}}</p>
+                                    <p>{{$settings->currency}}{{number_format((float) str_replace(',', '', $user->bonus ?? 0))}}</p>
                                 </div>
                                 <div class="col-md-3">
                                     <h5>User Account Status</h5>
