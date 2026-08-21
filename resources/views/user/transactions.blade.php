@@ -116,7 +116,7 @@ if (Auth::user()->dashboard_style == "light") {
                                             <tr>
                                                 <td>
                                                         <span class="amount positive">
-                                                            +{{ $settings->currency }}{{ number_format($deposit->amount, 2) }}
+                                                            +{{ $settings->currency }}{{ number_format((float) str_replace(',', '', $deposit->amount ?? 0), 2) }}
                                                         </span>
                                                 </td>
                                                 <td>

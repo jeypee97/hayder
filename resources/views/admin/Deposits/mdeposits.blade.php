@@ -43,7 +43,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                             <th scope="row">{{$deposit->id}}</th>
                                             <td>{{$deposit->duser->name}}</td>
                                             <td>{{$deposit->duser->email}}</td>
-                                            <td>{{$settings->currency}}{{number_format($deposit->amount)}}</td>
+                                            <td>{{$settings->currency}}{{number_format((float) str_replace(',', '', $deposit->amount ?? 0))}}</td>
                                             <td>{{$deposit->payment_mode}}</td>
                                             <td>
                                                 @if ($deposit->status == "Processed")
@@ -72,7 +72,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                             <th scope="row">{{$deposit->id}}</th>
                                             <td>{{$deposit->duser->name}}</td>
                                             <td>{{$deposit->duser->email}}</td>
-                                            <td>{{$settings->currency}}{{number_format($deposit->amount)}}</td>
+                                            <td>{{$settings->currency}}{{number_format((float) str_replace(',', '', $deposit->amount ?? 0))}}</td>
                                             <td>{{$deposit->payment_mode}}</td>
                                             <td>
                                                 <span class="badge badge-danger">{{$deposit->status}}</span>
