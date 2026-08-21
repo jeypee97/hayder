@@ -304,17 +304,13 @@ class ManageUsersController extends Controller
         $user = User::where('id', $id)->first();
         $deposits = Deposit::where('user', $id)->orderByDesc('id')->get();
         $withdrawals = Withdrawal::where('user_id', $id)->orderByDesc('id')->get();
-        $totalDeposits = $deposits->sum('amount');
-        $totalWithdrawals = $withdrawals->sum('amount');
+        // Amounts are stored as strings and may contain commas or blanks, which
+        // breaks Collection::sum() on PHP 8. Normalise each value to a float first.
+        $totalDeposits = $deposits->sum(fn($d) => (float) str_replace(',', '', $d->amount ?? 0));
+        $totalWithdrawals = $withdrawals->sum(fn($w) => (float) str_replace(',', '', $w->amount ?? 0));
 
         // Fetch the referrer (if any)
         $referrer = $user->ref_by ? User::where('id', $user->ref_by)->first() : null;
-
-
-        $ref = $referrer->name;
-
-
-
 
         return view('admin.Users.userdetails', [
             'user' => $user,
