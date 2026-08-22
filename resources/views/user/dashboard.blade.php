@@ -178,7 +178,7 @@ if (Auth::user()->dashboard_style == "light") {
                                         <span class="activity-date">{{ $transaction->created_at->diffForHumans() }}</span>
                                     </div>
                                     <div class="activity-amount positive">
-                                        +{{ $settings->currency }}{{ number_format($transaction->amount, 2) }}
+                                        +{{ $settings->currency }}{{ $transaction->amount }}
                                     </div>
                                 </div>
                             @empty
