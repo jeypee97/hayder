@@ -13,6 +13,7 @@ use App\Models\Settings;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Log;
 use App\Models\BalanceLog;
+use App\Casts\CommaFloat;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -93,6 +94,10 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'account_bal' => CommaFloat::class,
+        'bonus' => CommaFloat::class,
+        'roi' => CommaFloat::class,
+        'ref_bonus' => CommaFloat::class,
     ];
 
     /**
