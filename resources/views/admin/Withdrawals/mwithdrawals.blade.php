@@ -45,9 +45,13 @@ if (Auth('admin')->User()->dashboard_style == "light") {
 {{--                                        <a href=""></a>--}}
 
                                         <td>
-                                            <a href="{{ route('viewuser', $withdrawal->user->id) }}" class="text-{{$text}}">
-                                                {{ $withdrawal->user->name }}
-                                            </a>
+                                            @if ($withdrawal->user)
+                                                <a href="{{ route('viewuser', $withdrawal->user->id) }}" class="text-{{$text}}">
+                                                    {{ $withdrawal->user->name }}
+                                                </a>
+                                            @else
+                                                <span class="text-{{$text}}">Deleted user</span>
+                                            @endif
                                         </td>
 
 {{--                                        <td>{{$withdrawal->user->name}}</td>--}}
