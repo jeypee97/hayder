@@ -64,8 +64,21 @@ class CloseExpiredInvestmentsJob implements ShouldQueue
                     // The commission is deducted from the profit the investor sees
                     // and from their credited return, so a $100 profit at 10%
                     // shows as $90 for the investor.
-                    $commission = app(\App\Services\ReferralService::class)
-                        ->handleTradeProfitCommission($investment->user, $profit);
+                    //
+                    // A broken referral chain (e.g. the upline account was
+                    // deleted) must not block the investment from closing, so
+                    // failures here are logged and treated as no commission.
+                    try {
+                        $commission = app(\App\Services\ReferralService::class)
+                            ->handleTradeProfitCommission($investment->user, $profit);
+                    } catch (\Throwable $e) {
+                        Log::warning("Investment {$investment->id}: trade profit commission failed, skipping commission.", [
+                            'trader_id' => $investment->user->id,
+                            'ref_by'    => $investment->user->ref_by,
+                            'error'     => $e->getMessage(),
+                        ]);
+                        $commission = 0.0;
+                    }
 
                     $profit      -= $commission;
                     $totalReturn = $investment->amount + $profit;
