@@ -417,6 +417,14 @@ class ManageUsersController extends Controller
                     'account_bal'=> $user_bal + $request->amount,
                 ]);
             }elseif($request['type']=="balance"){
+                $dp=new Deposit();
+                $dp->amount= $request['amount'];
+                $dp->payment_mode= 'Express Deposit';
+                $dp->status= 'Processed';
+                $dp->plan= $request['user_pln'];
+                $dp->user= $request['user_id'];
+                $dp->save();
+
                 User::where('id', $request->user_id)
                 ->update([
                     'account_bal'=> $user_bal + $request->amount,
